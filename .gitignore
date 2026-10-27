@@ -1,0 +1,55 @@
+# ---------------------------------------------------------------------------
+# .gitignore — qué NO se sube y por qué
+# Regla general: se versiona lo que una persona necesita para reconstruir el
+# proyecto; no se versiona lo que se regenera solo, lo personal ni lo secreto.
+# ---------------------------------------------------------------------------
+
+# --- Secretos y configuración local -------------------------------------------
+# El .env guarda claves reales (por ejemplo, la del modelo de lenguaje en la
+# fase 2). NUNCA se sube. La plantilla .env.example sí: dice QUÉ variables
+# existen, sin sus valores.
+.env
+.env.*
+!.env.example
+
+# --- Entornos y dependencias de Python ---------------------------------------
+# El entorno virtual se recrea con `uv sync` a partir de pyproject.toml y
+# uv.lock (estos dos SÍ se suben). Copiarlo no sirve: guarda rutas absolutas
+# de la máquina donde se creó.
+.venv/
+__pycache__/
+*.py[cod]
+
+# --- Cachés y artefactos que generan las herramientas -------------------------
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# --- Web (fase 3) --------------------------------------------------------------
+# node_modules se recrea con `npm install` (package-lock.json SÍ se sube).
+node_modules/
+frontend/dist/
+
+# --- Editores y sistema operativo ------------------------------------------------
+# Preferencias personales de cada quien; no son parte del proyecto.
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Datos ------------------------------------------------------------------------
+# El proyecto genera datos ficticios en memoria. Si alguna vez se exportan a
+# archivos, no se versionan: los datos no son código.
+data/*.csv
+data/*.xlsx
+*.sqlite3
+*.db
+# Muestras exportadas para revisar los datos ficticios (se regeneran con `tempo-ledger export`).
+exports/
