@@ -7,6 +7,7 @@ from datetime import date, timedelta
 import pytest
 
 from tempo_ledger.data.generator import EDGE_CASES, END, START, Dataset, generate
+from tempo_ledger.domain import Period, ledger_until, to_postings
 from tempo_ledger.domain.calendar import closing_period, is_business_day
 from tempo_ledger.domain.catalog import ExceptionKind, RequestKind, RequestStatus
 
@@ -103,3 +104,17 @@ def test_excepciones_unicas_por_empleado_y_cierre(ds: Dataset) -> None:
     assert len(claves) == len(set(claves))
     for x in ds.exceptions:
         assert (x.minutes is None) == (x.kind is ExceptionKind.NO_DEDUCTION_TOTAL)
+
+
+def test_las_excepciones_caen_en_cierres_con_deuda(ds: Dataset) -> None:
+    """Sin la excepción, ese cierre terminaría con descuento (salvo el caso borde fijo)."""
+    postings = to_postings(ds.requests)
+    terminated = {e.id: e.terminated_on for e in ds.employees}
+    fijo = ds.edge_cases["excepcion_parcial"]
+    for x in ds.exceptions:
+        if x.employee_id == fijo and x.period == "2026-04":
+            continue
+        historia = ledger_until([p for p in postings if p.employee_id == x.employee_id],
+                                Period.parse(x.period), terminated_on=terminated[x.employee_id])
+        assert historia[-1].period == Period.parse(x.period)
+        assert historia[-1].deduction > 0, x

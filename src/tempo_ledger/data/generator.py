@@ -11,6 +11,7 @@ impuntual) más **casos borde forzados**, para que cada regla del libro tenga ej
 from __future__ import annotations
 
 import random
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 
@@ -27,12 +28,12 @@ from tempo_ledger.domain.catalog import (
     RequestKind,
     RequestStatus,
 )
-from tempo_ledger.domain.models import Period, Policy
+from tempo_ledger.domain.ledger import ledger_until
+from tempo_ledger.domain.models import Period
+from tempo_ledger.domain.postings import to_postings
 
 FIRST, LAST = Period(2025, 1), Period(2026, 12)
 START, END = FIRST.start, LAST.end
-# Plazo de vencimiento de los permisos según la política por defecto del libro.
-_EXPIRY = timedelta(days=Policy().debit_expiry_days)
 
 EDGE_CASES = (
     "siempre_a_favor", "deuda_grande", "aprobacion_tardia", "cese_mitad_de_mes",
@@ -437,17 +438,21 @@ def _attendance(
 
 
 def _exceptions(rnd: random.Random, ds: Dataset) -> list[ExceptionRec]:
+    """Excepciones en cierres que, sin ellas, terminarían con descuento: así la regla se ve."""
     out: dict[tuple[int, str], ExceptionRec] = {}
     caso = ds.edge_cases["excepcion_parcial"]
     out[(caso, "2026-04")] = ExceptionRec(caso, "2026-04", ExceptionKind.NO_DEDUCTION_PARTIAL,
                                           480, "acuerdo con jefatura: descuento en dos partes")
-    con_permisos = sorted({
-        (r.employee_id, str(closing_period(r.start_date + _EXPIRY)))
-        for r in ds.requests
-        if r.kind.is_debit and r.status is RequestStatus.APPROVED
-        and closing_period(r.start_date + _EXPIRY) <= LAST
-    })
-    for emp_id, periodo in rnd.sample(con_permisos, min(10, len(con_permisos))):
+    postings = defaultdict(list)
+    for p in to_postings(ds.requests):
+        postings[p.employee_id].append(p)
+    con_deuda = sorted(
+        (emp.id, str(c.period))
+        for emp in ds.employees
+        for c in ledger_until(postings[emp.id], LAST, terminated_on=emp.terminated_on)
+        if c.deduction > 0 and c.settlement is None
+    )
+    for emp_id, periodo in rnd.sample(con_deuda, min(10, len(con_deuda))):
         if (emp_id, periodo) in out:
             continue
         if rnd.random() < 0.6:

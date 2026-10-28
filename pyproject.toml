@@ -1,6 +1,6 @@
 [project]
 name = "tempo-ledger"
-version = "0.1.0"
+version = "0.2.0"
 description = "Banco de horas como libro contable: cada evento es un asiento y el saldo de cualquier cierre se reconstruye sumándolos."
 readme = "README.md"
 license = "MIT"
@@ -8,6 +8,7 @@ requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.13",
     "fastapi>=0.115",
+    "langchain-core>=0.3",
     "openpyxl>=3.1",
     "sqlalchemy>=2.0",
     "uvicorn>=0.30",
