@@ -65,7 +65,7 @@ def create_app(settings: Settings | None = None, store: InMemoryStore | None = N
         if store.employee(employee_id) is None:
             raise HTTPException(404, f"no existe el empleado {employee_id}")
         postings = _postings(store.entries_of(employee_id), settings.policy)
-        closings = ledger_until(postings, _period(until), settings.policy)
+        closings = ledger_until(postings, _period(until))
         return [ClosingOut.of(c) for c in closings]
 
     @app.get("/closings/{period}", response_model=MonthReportOut)
@@ -73,8 +73,7 @@ def create_app(settings: Settings | None = None, store: InMemoryStore | None = N
         target = _period(period)
         closings = []
         for emp in store.employees():
-            history = ledger_until(_postings(store.entries_of(emp.id), settings.policy),
-                                   target, settings.policy)
+            history = ledger_until(_postings(store.entries_of(emp.id), settings.policy), target)
             # El saldo de un mes depende de toda la historia anterior: se cierra desde el
             # primer asiento y se toma solo el último cierre.
             if history:

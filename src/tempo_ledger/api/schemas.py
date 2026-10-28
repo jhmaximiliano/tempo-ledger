@@ -61,8 +61,10 @@ class ClosingOut(BaseModel):
     due: int
     balance: int
     deduction: int
+    waived: int
     closing: int
     pending: int
+    settlement: int | None
     status: Status
     explanation: str
     lines: list[LineOut] = []
@@ -72,7 +74,8 @@ class ClosingOut(BaseModel):
         return cls(
             employee_id=c.employee_id, period=str(c.period), opening=c.opening,
             credits=c.credits, due=c.due, balance=c.balance, deduction=c.deduction,
-            closing=c.closing, pending=c.pending, status=c.status, explanation=c.explain(),
+            waived=c.waived, closing=c.closing, pending=c.pending, settlement=c.settlement,
+            status=c.status, explanation=c.explain(),
             lines=[LineOut(entry_id=ln.request_id, kind=ln.kind, day=ln.day, minutes=ln.minutes,
                            effect=ln.effect, due_on=ln.due_on, late=ln.late) for ln in c.lines]
             if with_lines else [],

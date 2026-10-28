@@ -22,8 +22,6 @@ class Settings:
         return cls(
             policy=Policy(
                 debit_expiry_days=int(os.environ.get("TEMPO_DEBIT_EXPIRY_DAYS", "30")),
-                carry_negative=os.environ.get("TEMPO_CARRY_NEGATIVE", "false").lower()
-                in ("1", "true", "yes", "si", "sí"),
             ),
             seed=int(os.environ.get("TEMPO_SEED", "42")),
             employees=int(os.environ.get("TEMPO_EMPLOYEES", "60")),

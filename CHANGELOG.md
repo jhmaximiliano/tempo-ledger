@@ -12,6 +12,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
   cuenta en el primer cierre que ya la incluye (*fuera de plazo*).
 - Calendario de cierres como parámetro (`Calendar`): día de corte y días hábiles hasta la
   fecha efectiva, con la ventana de cada cierre. Base de la simulación de F3.
+- Excepciones «no descontar» total y parcial por empleado y cierre: lo omitido se arrastra
+  al cierre siguiente.
+- Los cinco estados del plan: A FAVOR, SIN MOVIMIENTO, SALDADO, EN CONTRA y EXCEPCIÓN.
+- Tardanzas (en tolerancia hasta 10 min, no recuperables después) y ausencias no
+  regularizadas (almuerzo de más de 60 min, salida antes de las 18:00) a partir de la
+  asistencia, como incidencias informativas de cada cierre (`domain/attendance.py`). Un
+  permiso por horas del mismo día las cubre hasta sus minutos.
+- Cese y finiquito: el cierre del cese es el último y liquida saldo − permisos por vencer −
+  tardanza no recuperable, sin descuento por planilla.
 - Extra opcional `postgres` (`psycopg[binary]`) para conectarse a PostgreSQL.
 - CI mínimo con GitHub Actions (`.github/workflows/ci.yml`): ruff y pytest en cada push a
   `main` y en cada pull request, con su indicador en el README. Adelanta una parte de F5.
@@ -25,6 +34,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
   líneas del cierre indican si el asiento llegó fuera de plazo.
 - La API del prototipo pasa sus asientos por la misma conversión; las líneas devuelven el
   tipo de solicitud (`horas_extra`, `permiso_horas`) y el campo `late`.
+
+### Quitado
+- La política global `TEMPO_CARRY_NEGATIVE` (arrastrar todo saldo negativo): la reemplazan
+  las excepciones por empleado y cierre, como dice el plan.
 
 ## [0.1.0] — 2026-10-26 · F1: modelo de datos y generador ficticio
 
