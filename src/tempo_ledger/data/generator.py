@@ -27,10 +27,12 @@ from tempo_ledger.domain.catalog import (
     RequestKind,
     RequestStatus,
 )
-from tempo_ledger.domain.models import Period
+from tempo_ledger.domain.models import Period, Policy
 
 FIRST, LAST = Period(2025, 1), Period(2026, 12)
 START, END = FIRST.start, LAST.end
+# Plazo de vencimiento de los permisos según la política por defecto del libro.
+_EXPIRY = timedelta(days=Policy().debit_expiry_days)
 
 EDGE_CASES = (
     "siempre_a_favor", "deuda_grande", "aprobacion_tardia", "cese_mitad_de_mes",
@@ -440,10 +442,10 @@ def _exceptions(rnd: random.Random, ds: Dataset) -> list[ExceptionRec]:
     out[(caso, "2026-04")] = ExceptionRec(caso, "2026-04", ExceptionKind.NO_DEDUCTION_PARTIAL,
                                           480, "acuerdo con jefatura: descuento en dos partes")
     con_permisos = sorted({
-        (r.employee_id, str(closing_period(r.start_date + timedelta(days=30))))
+        (r.employee_id, str(closing_period(r.start_date + _EXPIRY)))
         for r in ds.requests
         if r.kind.is_debit and r.status is RequestStatus.APPROVED
-        and closing_period(r.start_date + timedelta(days=30)) <= LAST
+        and closing_period(r.start_date + _EXPIRY) <= LAST
     })
     for emp_id, periodo in rnd.sample(con_permisos, min(10, len(con_permisos))):
         if (emp_id, periodo) in out:

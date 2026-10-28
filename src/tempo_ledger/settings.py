@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
+from tempo_ledger.data.generator import FIRST, LAST
 from tempo_ledger.domain.models import Period, Policy
 
 
@@ -25,7 +26,7 @@ class Settings:
                 in ("1", "true", "yes", "si", "sí"),
             ),
             seed=int(os.environ.get("TEMPO_SEED", "42")),
-            employees=int(os.environ.get("TEMPO_EMPLOYEES", "12")),
-            first=Period.parse(os.environ.get("TEMPO_FIRST_PERIOD", "2026-01")),
-            last=Period.parse(os.environ.get("TEMPO_LAST_PERIOD", "2026-09")),
+            employees=int(os.environ.get("TEMPO_EMPLOYEES", "60")),
+            first=Period.parse(os.environ.get("TEMPO_FIRST_PERIOD", str(FIRST))),
+            last=Period.parse(os.environ.get("TEMPO_LAST_PERIOD", str(LAST))),
         )
