@@ -86,7 +86,6 @@ class Policy:
     """Reglas configurables del banco de horas."""
 
     debit_expiry_days: int = 30  # un permiso vence N días después de tomarse
-    carry_negative: bool = False  # True: el saldo negativo se arrastra en vez de descontarse
 
     def __post_init__(self) -> None:
         if self.debit_expiry_days < 0:

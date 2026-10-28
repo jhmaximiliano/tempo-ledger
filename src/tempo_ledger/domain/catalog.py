@@ -45,6 +45,15 @@ class RequestStatus(StrEnum):
     CANCELLED = "anulada"
 
 
+class IncidentKind(StrEnum):
+    """Lo que la asistencia muestra en un cierre. Informativo: no mueve el saldo."""
+
+    LATE_TOLERATED = "tardanza_tolerada"  # hasta 10 min después de las 09:00
+    LATE_UNRECOVERABLE = "tardanza_no_recuperable"  # más de 10 min: va a planilla
+    LONG_LUNCH = "almuerzo_extendido"  # almuerzo de más de 60 min sin permiso
+    EARLY_LEAVE = "salida_anticipada"  # salida antes de las 18:00 sin permiso
+
+
 class ExceptionKind(StrEnum):
     NO_DEDUCTION_TOTAL = "no_descontar_total"
     NO_DEDUCTION_PARTIAL = "no_descontar_parcial"
