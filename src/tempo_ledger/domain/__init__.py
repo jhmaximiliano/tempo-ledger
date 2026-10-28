@@ -1,5 +1,6 @@
 from tempo_ledger.domain.ledger import Closing, Effect, Line, Status, close_periods, ledger_until
 from tempo_ledger.domain.models import Employee, Entry, EntryKind, Period, Policy, fmt_minutes
+from tempo_ledger.domain.postings import Posting, to_postings
 
 __all__ = [
     "Closing",
@@ -10,8 +11,10 @@ __all__ = [
     "Line",
     "Period",
     "Policy",
+    "Posting",
     "Status",
     "close_periods",
     "fmt_minutes",
     "ledger_until",
+    "to_postings",
 ]

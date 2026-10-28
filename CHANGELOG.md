@@ -6,6 +6,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 ## [Sin publicar]
 
 ### Añadido
+- Conversión de solicitudes en asientos (`domain/postings.py`): solo las aprobadas cuentan;
+  las horas a favor suman en el cierre de su fecha, los permisos en el de su vencimiento y
+  vacaciones y licencia médica son informativas. Una aprobada después de la fecha efectiva
+  cuenta en el primer cierre que ya la incluye (*fuera de plazo*).
 - Extra opcional `postgres` (`psycopg[binary]`) para conectarse a PostgreSQL.
 - CI mínimo con GitHub Actions (`.github/workflows/ci.yml`): ruff y pytest en cada push a
   `main` y en cada pull request, con su indicador en el README. Adelanta una parte de F5.
