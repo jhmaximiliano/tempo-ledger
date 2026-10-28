@@ -29,7 +29,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 - Pruebas de invariantes del generador, del calendario y de ida y vuelta por la base.
 
 ### Pendiente
-- El generador viejo y el almacén en memoria del prototipo se retiran en F3 (ver PLAN §9).
+- El generador viejo y el almacén en memoria del prototipo se retiran en F3 (ver la sección 9 de `docs/PLAN.md`).
 
 ## F0 — 2026-10-26 · Plan y decisiones
 
