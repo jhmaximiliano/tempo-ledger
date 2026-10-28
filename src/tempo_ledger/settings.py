@@ -5,17 +5,19 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-from tempo_ledger.data.generator import FIRST, LAST
-from tempo_ledger.domain.models import Period, Policy
+from tempo_ledger.domain.models import Policy
+from tempo_ledger.infra.db import DEFAULT_URL
+
+_TRUE = ("1", "true", "yes", "si", "sí")
 
 
 @dataclass(frozen=True, slots=True)
 class Settings:
     policy: Policy
-    seed: int
-    employees: int
-    first: Period
-    last: Period
+    database_url: str = DEFAULT_URL
+    seed: int = 42
+    employees: int = 60
+    auto_seed: bool = True  # llenar la base con datos ficticios si está vacía
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -23,8 +25,8 @@ class Settings:
             policy=Policy(
                 debit_expiry_days=int(os.environ.get("TEMPO_DEBIT_EXPIRY_DAYS", "30")),
             ),
+            database_url=os.environ.get("TEMPO_DATABASE_URL", DEFAULT_URL),
             seed=int(os.environ.get("TEMPO_SEED", "42")),
             employees=int(os.environ.get("TEMPO_EMPLOYEES", "60")),
-            first=Period.parse(os.environ.get("TEMPO_FIRST_PERIOD", str(FIRST))),
-            last=Period.parse(os.environ.get("TEMPO_LAST_PERIOD", str(LAST))),
+            auto_seed=os.environ.get("TEMPO_AUTO_SEED", "true").lower() in _TRUE,
         )
