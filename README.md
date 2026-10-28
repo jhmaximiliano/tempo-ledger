@@ -13,8 +13,8 @@ Proyecto personal de práctica. **Todos los datos son ficticios**: los genera un
 reproducible y no corresponden a ninguna persona real. El producto **no usa modelos de IA**
 ([ADR-0009](docs/adr/0009-sin-ia-generativa.md)).
 
-**Estado:** F2 terminada (`v0.2.0`): el motor aplica todas las reglas del libro y el
-cierre corre como cadena LCEL. Sigue F3, la API sobre la base. Ver la
+**Estado:** F3 terminada (`v0.3.0`): la API sobre la base calcula los cierres con el
+motor completo, exporta a Excel y simula. Sigue F4, la web. Ver la
 [hoja de ruta](#hoja-de-ruta) y el [plan](docs/PLAN.md).
 
 ## Reglas del libro
@@ -102,8 +102,16 @@ correr `seed` antes. Todos los tiempos van en **minutos**.
 | `POST` | `/requests` | Registra una solicitud (queda pendiente) |
 | `POST` | `/requests/{id}/decision` | Aprueba, rechaza o anula una pendiente |
 | `GET` | `/requests/{id}` | Una solicitud |
+| `GET` | `/closings/{AAAA-MM}/export.xlsx` | El cierre en Excel: resumen, saldos y líneas |
+| `POST` | `/simulations` | Recalcula un cierre con otro corte, fecha efectiva o vencimiento, sin guardar |
 
-## Funcionalidades previstas
+Las consultas de saldo, eventos y serie también existen como herramientas de LangChain
+(`api/tools.py`), listas para que algún día las use un modelo.
+
+## Funcionalidades
+
+Las seis primeras están en la API desde `v0.3.0` y la web (F4) las mostrará; la séptima
+es opcional (F7).
 
 1. **Saldos por cierre**: todos los empleados, con estado y exportación a Excel.
 2. **Detalle por empleado**: la cuenta del cierre paso a paso, con los asientos que la explican.
@@ -137,11 +145,11 @@ una cadena de pasos; ningún paso llama a un modelo
 ```
 src/tempo_ledger/
   domain/      modelos, catálogos, calendario, asientos, asistencia y motor (Python puro)
-  pipeline/    cadena LCEL del cierre: cargar | validar | reglas | cerrar | reporte
+  pipeline/    cadena LCEL del cierre (cargar | validar | reglas | cerrar | reporte) y Excel
   data/        generador ficticio y exportación a Excel
   infra/       tablas SQLAlchemy, conexión, carga de datos y repositorio
   migrations/  migraciones de Alembic
-  api/         FastAPI: rutas, contratos y servicio
+  api/         FastAPI: rutas, contratos, servicio y herramientas de LangChain
   cli.py       comandos `seed` y `export`
 tests/         reglas caso por caso + invariantes sobre los datos generados
 docs/          plan y registro de decisiones (ADR)
@@ -176,7 +184,7 @@ Cada fase cierra con pruebas en verde, PR integrado y una etiqueta de versión.
 - [x] **F0** — Plan y ADR.
 - [x] **F1** — Modelo de datos (SQLAlchemy + Alembic) y generador ficticio · `v0.1.0`
 - [x] **F2** — Motor de reglas y cadena LCEL del cierre · `v0.2.0`
-- [ ] **F3** — API sobre la base, herramientas LangChain, Excel y simulación · `v0.3.0`
+- [x] **F3** — API sobre la base, herramientas LangChain, Excel y simulación · `v0.3.0`
 - [ ] **F4** — Web con las 5 vistas · `v0.4.0`
 - [ ] **F5** — Calidad, Docker Compose y CI/CD · `v0.5.0`
 - [ ] **F6** — Demo pública en Render + Neon · `v1.0.0`

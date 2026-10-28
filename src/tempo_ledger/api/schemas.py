@@ -177,6 +177,60 @@ class EventsOut(BaseModel):
                    by_light=dict(Counter(str(e.light) for e in events)), events=events)
 
 
+class SimulationIn(BaseModel):
+    period: str = Field(description="Cierre a simular, AAAA-MM")
+    cutoff_day: int = Field(default=25, ge=1, le=31, description="Día de corte")
+    effective_business_days: int = Field(default=3, ge=0, le=15,
+                                         description="Días hábiles del corte a la efectiva")
+    debit_expiry_days: int | None = Field(default=None, ge=0, le=365,
+                                          description="Vencimiento de permisos; por defecto "
+                                          "el configurado")
+
+
+class ChangeOut(BaseModel):
+    employee_id: int
+    full_name: str
+    status_before: Status
+    status_after: Status
+    closing_before: int
+    closing_after: int
+    deduction_before: int
+    deduction_after: int
+
+
+class SimulationOut(BaseModel):
+    period: str
+    cutoff_day: int
+    effective_business_days: int
+    debit_expiry_days: int
+    simulated: ReportOut
+    baseline_total_deduction: int
+    baseline_by_status: dict[str, int]
+    changes: list[ChangeOut]
+
+    @classmethod
+    def of(cls, body: SimulationIn, expiry: int, simulated: ClosingReport,
+           baseline: ClosingReport) -> SimulationOut:
+        before = {r.employee_id: r for r in baseline.rows}
+        changes = []
+        for r in simulated.rows:
+            b = before.get(r.employee_id)
+            if b is None:
+                continue
+            if (b.closing.status, b.closing.closing, b.closing.deduction) != (
+                    r.closing.status, r.closing.closing, r.closing.deduction):
+                changes.append(ChangeOut(
+                    employee_id=r.employee_id, full_name=r.full_name,
+                    status_before=b.closing.status, status_after=r.closing.status,
+                    closing_before=b.closing.closing, closing_after=r.closing.closing,
+                    deduction_before=b.closing.deduction, deduction_after=r.closing.deduction))
+        return cls(period=str(simulated.period), cutoff_day=body.cutoff_day,
+                   effective_business_days=body.effective_business_days,
+                   debit_expiry_days=expiry, simulated=ReportOut.of(simulated),
+                   baseline_total_deduction=baseline.total_deduction,
+                   baseline_by_status=baseline.by_status, changes=changes)
+
+
 class RequestIn(BaseModel):
     employee_id: int = Field(gt=0)
     kind: RequestKind

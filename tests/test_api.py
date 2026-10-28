@@ -3,52 +3,18 @@
 from __future__ import annotations
 
 from collections import Counter
-from datetime import date
-from pathlib import Path
 
 import pytest
+from apiutil import DS, EMP, MARZO, make_client
 from fastapi.testclient import TestClient
 
-from tempo_ledger.api.app import create_app
-from tempo_ledger.data.generator import generate
-from tempo_ledger.domain import Period, Policy
+from tempo_ledger.domain import Period
 from tempo_ledger.pipeline import ClosingRequest, build_closing_chain
-from tempo_ledger.settings import Settings
-
-SEED, EMPLOYEES = 7, 15
-MARZO = "2026-03"
-# Un empleado con vínculo durante todo el periodo y sin caso borde.
-_DS = generate(SEED, EMPLOYEES)
-EMP = next(e.id for e in _DS.employees
-           if e.hired_on <= date(2025, 1, 1) and e.terminated_on is None
-           and e.id not in _DS.edge_cases.values())
-
-
-def _client(tmp_path: Path, **kwargs) -> TestClient:
-    url = f"sqlite:///{(tmp_path / 'api.db').as_posix()}"
-    settings = Settings(policy=Policy(), database_url=url, seed=SEED, employees=EMPLOYEES,
-                        **kwargs)
-    return TestClient(create_app(settings))
-
-
-@pytest.fixture(scope="module")
-def client(tmp_path_factory) -> TestClient:
-    """Solo lectura: se comparte entre pruebas."""
-    with _client(tmp_path_factory.mktemp("lectura")) as c:
-        yield c
-
-
-@pytest.fixture
-def writer(tmp_path) -> TestClient:
-    """Para pruebas que escriben: una base nueva cada vez."""
-    with _client(tmp_path) as c:
-        yield c
 
 
 @pytest.fixture(scope="module")
 def chain_report():
-    ds = generate(SEED, EMPLOYEES)
-    return ds, build_closing_chain(lambda: ds).invoke(ClosingRequest(Period.parse(MARZO)))
+    return DS, build_closing_chain(lambda: DS).invoke(ClosingRequest(Period.parse(MARZO)))
 
 
 # --- Arranque ----------------------------------------------------------------------------
@@ -58,13 +24,13 @@ def test_health(client):
 
 
 def test_al_arrancar_llena_la_base_vacia(client):
-    assert len(client.get("/employees").json()) == EMPLOYEES
+    assert len(client.get("/employees").json()) == len(DS.employees)
     periodos = client.get("/periods").json()
     assert periodos[0] == {"period": "2025-01", "cutoff": "2025-01-24", "effective": "2025-01-29"}
 
 
 def test_sin_llenado_automatico_la_base_queda_vacia(tmp_path):
-    with _client(tmp_path, auto_seed=False) as c:
+    with make_client(tmp_path, auto_seed=False) as c:
         assert c.get("/employees").json() == []
         assert c.get(f"/closings/{MARZO}").status_code == 404
 
