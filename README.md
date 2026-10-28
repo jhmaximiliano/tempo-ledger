@@ -1,5 +1,7 @@
 # tempo-ledger
 
+[![CI](https://github.com/jhmaximiliano/tempo-ledger/actions/workflows/ci.yml/badge.svg)](https://github.com/jhmaximiliano/tempo-ledger/actions/workflows/ci.yml)
+
 **Banco de horas modelado como libro contable.** Cada solicitud aprobada —horas extra, un
 permiso— es un *asiento*; el saldo de cualquier cierre mensual se reconstruye sumando
 asientos, y cada número viene con las líneas que lo explican.

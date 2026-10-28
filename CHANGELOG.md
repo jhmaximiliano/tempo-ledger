@@ -7,6 +7,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ### Añadido
 - Extra opcional `postgres` (`psycopg[binary]`) para conectarse a PostgreSQL.
+- CI mínimo con GitHub Actions (`.github/workflows/ci.yml`): ruff y pytest en cada push a
+  `main` y en cada pull request, con su indicador en el README. Adelanta una parte de F5.
 
 ### Cambiado
 - README reescrito según el plan aprobado: reglas, comandos, arquitectura y hoja de ruta F0–F7.
