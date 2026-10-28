@@ -5,8 +5,8 @@
 # ---------------------------------------------------------------------------
 
 # --- Secretos y configuración local -------------------------------------------
-# El .env guarda claves reales (por ejemplo, la del modelo de lenguaje en la
-# fase 2). NUNCA se sube. La plantilla .env.example sí: dice QUÉ variables
+# El .env guarda valores locales y, más adelante, credenciales (por ejemplo,
+# la URL de la base de la demo). NUNCA se sube. La plantilla .env.example sí: dice QUÉ variables
 # existen, sin sus valores.
 .env
 .env.*
@@ -30,7 +30,7 @@ build/
 dist/
 *.egg-info/
 
-# --- Web (fase 3) --------------------------------------------------------------
+# --- Web (F4) --------------------------------------------------------------
 # node_modules se recrea con `npm install` (package-lock.json SÍ se sube).
 node_modules/
 frontend/dist/
