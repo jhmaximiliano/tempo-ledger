@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Protocol
 
-from tempo_ledger.domain.calendar import closing_period, effective_date
+from tempo_ledger.domain.calendar import DEFAULT_CALENDAR, Calendar
 from tempo_ledger.domain.catalog import RequestKind, RequestStatus
 from tempo_ledger.domain.models import Period, Policy
 
@@ -65,30 +65,34 @@ class Posting:
         return self.kind.is_debit
 
 
-def to_postings(requests: Iterable[RequestLike], policy: Policy | None = None) -> list[Posting]:
+def to_postings(
+    requests: Iterable[RequestLike],
+    policy: Policy | None = None,
+    calendar: Calendar = DEFAULT_CALENDAR,
+) -> list[Posting]:
     """Un asiento por cada solicitud aprobada, en el orden recibido."""
     policy = policy or Policy()
     return [
-        _posting(r, policy) for r in requests if r.status is RequestStatus.APPROVED
+        _posting(r, policy, calendar) for r in requests if r.status is RequestStatus.APPROVED
     ]
 
 
-def _posting(r: RequestLike, policy: Policy) -> Posting:
+def _posting(r: RequestLike, policy: Policy, calendar: Calendar) -> Posting:
     if r.decided_at is None:
         raise ValueError(f"la solicitud {r.id} está aprobada pero no tiene fecha de aprobación")
     due_on = (r.start_date + timedelta(days=policy.debit_expiry_days) if r.kind.is_debit
               else r.start_date)
-    natural = closing_period(due_on)
-    period = _counting_period(natural, r.decided_at.date())
+    natural = calendar.closing_of(due_on)
+    period = _counting_period(natural, r.decided_at.date(), calendar)
     return Posting(
         request_id=r.id, employee_id=r.employee_id, kind=r.kind, day=r.start_date,
         minutes=r.minutes, due_on=due_on, period=period, late=period != natural,
     )
 
 
-def _counting_period(natural: Period, approved_on: date) -> Period:
+def _counting_period(natural: Period, approved_on: date, calendar: Calendar) -> Period:
     """El primer cierre, desde `natural`, cuya fecha efectiva no es anterior a la aprobación."""
     period = natural
-    while effective_date(period) < approved_on:
+    while calendar.effective(period) < approved_on:
         period = period.next()
     return period

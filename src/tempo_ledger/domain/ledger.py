@@ -1,4 +1,8 @@
-"""El motor: recorre los periodos y cierra cada uno a partir de los asientos.
+"""El motor: recorre los cierres y cierra cada uno a partir de los asientos.
+
+Cada asiento (`Posting`) ya sabe en qué cierre cuenta (ver `domain/postings.py`); el motor
+los agrupa por cierre y calcula el saldo. La ventana de cada cierre sale del calendario:
+del corte anterior (exclusive) al corte actual (inclusive).
 
 Invariantes que cumple cada cierre (y que las pruebas verifican):
 
@@ -17,7 +21,10 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 
-from tempo_ledger.domain.models import Entry, EntryKind, Period, Policy, fmt_minutes
+from tempo_ledger.domain.calendar import DEFAULT_CALENDAR, Calendar
+from tempo_ledger.domain.catalog import RequestKind
+from tempo_ledger.domain.models import Period, Policy, fmt_minutes
+from tempo_ledger.domain.postings import Posting
 
 
 class Status(StrEnum):
@@ -30,17 +37,18 @@ class Status(StrEnum):
 class Effect(StrEnum):
     CREDIT = "credit"  # sumó en este cierre
     DUE = "due"  # venció y restó en este cierre
-    PENDING = "pending"  # permiso ya tomado que vence en un cierre posterior
+    PENDING = "pending"  # permiso ya tomado que resta en un cierre posterior
 
 
 @dataclass(frozen=True, slots=True)
 class Line:
-    entry_id: int
-    kind: EntryKind
+    request_id: int
+    kind: RequestKind
     day: date
     minutes: int
     effect: Effect
     due_on: date
+    late: bool  # fuera de plazo: aprobada después de la fecha efectiva de su cierre
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,11 +83,20 @@ class Closing:
 
 
 def close_periods(
-    entries: Iterable[Entry], first: Period, last: Period, policy: Policy
+    postings: Iterable[Posting],
+    first: Period,
+    last: Period,
+    policy: Policy | None = None,
+    calendar: Calendar = DEFAULT_CALENDAR,
 ) -> list[Closing]:
-    """Cierra los periodos de `first` a `last` (inclusive) para UN empleado."""
-    entries = list(entries)
-    employees = {e.employee_id for e in entries}
+    """Cierra los periodos de `first` a `last` (inclusive) para UN empleado.
+
+    Los asientos informativos (vacaciones, licencia médica) no mueven el saldo y no se
+    listan todavía.
+    """
+    policy = policy or Policy()
+    postings = [p for p in postings if p.is_credit or p.is_debit]
+    employees = {p.employee_id for p in postings}
     if len(employees) > 1:
         raise ValueError("close_periods trabaja con los asientos de un solo empleado")
     if first > last:
@@ -90,22 +107,13 @@ def close_periods(
     opening = 0
     period = first
     while period <= last:
-        credits = [e for e in entries if e.kind is EntryKind.CREDIT and period.contains(e.day)]
-        due = [
-            e
-            for e in entries
-            if e.kind is EntryKind.DEBIT and period.contains(policy.due_on(e))
-        ]
-        pending = [
-            e
-            for e in entries
-            if e.kind is EntryKind.DEBIT
-            and e.day <= period.end
-            and policy.due_on(e) > period.end
-        ]
+        cutoff = calendar.cutoff(period)
+        credits = [p for p in postings if p.is_credit and p.period == period]
+        due = [p for p in postings if p.is_debit and p.period == period]
+        pending = [p for p in postings if p.is_debit and p.day <= cutoff and p.period > period]
 
-        credit_min = sum(e.minutes for e in credits)
-        due_min = sum(e.minutes for e in due)
+        credit_min = sum(p.minutes for p in credits)
+        due_min = sum(p.minutes for p in due)
         balance = opening + credit_min - due_min
 
         if balance < 0 and not policy.carry_negative:
@@ -117,10 +125,10 @@ def close_periods(
             status = Status.POSITIVE if balance > 0 else Status.ZERO
 
         lines = sorted(
-            [_line(e, Effect.CREDIT, policy) for e in credits]
-            + [_line(e, Effect.DUE, policy) for e in due]
-            + [_line(e, Effect.PENDING, policy) for e in pending],
-            key=lambda ln: (ln.day, ln.entry_id),
+            [_line(p, Effect.CREDIT) for p in credits]
+            + [_line(p, Effect.DUE) for p in due]
+            + [_line(p, Effect.PENDING) for p in pending],
+            key=lambda ln: (ln.day, ln.request_id),
         )
         closings.append(
             Closing(
@@ -132,7 +140,7 @@ def close_periods(
                 balance=balance,
                 deduction=deduction,
                 closing=closing_balance,
-                pending=sum(e.minutes for e in pending),
+                pending=sum(p.minutes for p in pending),
                 status=status,
                 lines=tuple(lines),
             )
@@ -142,23 +150,29 @@ def close_periods(
     return closings
 
 
-def ledger_until(entries: Iterable[Entry], last: Period, policy: Policy) -> list[Closing]:
-    """Historia completa de un empleado: desde el mes de su primer asiento hasta `last`."""
-    entries = list(entries)
-    if not entries:
+def ledger_until(
+    postings: Iterable[Posting],
+    last: Period,
+    policy: Policy | None = None,
+    calendar: Calendar = DEFAULT_CALENDAR,
+) -> list[Closing]:
+    """Historia completa de un empleado: desde el cierre de su primer asiento hasta `last`."""
+    postings = [p for p in postings if p.is_credit or p.is_debit]
+    if not postings:
         return []
-    first = Period.of(min(e.day for e in entries))
+    first = calendar.closing_of(min(p.day for p in postings))
     if first > last:
         return []
-    return close_periods(entries, first, last, policy)
+    return close_periods(postings, first, last, policy, calendar)
 
 
-def _line(entry: Entry, effect: Effect, policy: Policy) -> Line:
+def _line(p: Posting, effect: Effect) -> Line:
     return Line(
-        entry_id=entry.id,
-        kind=entry.kind,
-        day=entry.day,
-        minutes=entry.minutes,
+        request_id=p.request_id,
+        kind=p.kind,
+        day=p.day,
+        minutes=p.minutes,
         effect=effect,
-        due_on=policy.due_on(entry),
+        due_on=p.due_on,
+        late=p.late,
     )

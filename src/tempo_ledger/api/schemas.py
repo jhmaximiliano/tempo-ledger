@@ -6,6 +6,7 @@ from datetime import date
 
 from pydantic import BaseModel, Field
 
+from tempo_ledger.domain.catalog import RequestKind
 from tempo_ledger.domain.ledger import Closing, Effect, Status
 from tempo_ledger.domain.models import Employee, Entry, EntryKind
 
@@ -44,11 +45,12 @@ class EntryOut(BaseModel):
 
 class LineOut(BaseModel):
     entry_id: int
-    kind: EntryKind
+    kind: RequestKind
     day: date
     minutes: int
     effect: Effect
     due_on: date
+    late: bool
 
 
 class ClosingOut(BaseModel):
@@ -71,8 +73,8 @@ class ClosingOut(BaseModel):
             employee_id=c.employee_id, period=str(c.period), opening=c.opening,
             credits=c.credits, due=c.due, balance=c.balance, deduction=c.deduction,
             closing=c.closing, pending=c.pending, status=c.status, explanation=c.explain(),
-            lines=[LineOut(entry_id=ln.entry_id, kind=ln.kind, day=ln.day, minutes=ln.minutes,
-                           effect=ln.effect, due_on=ln.due_on) for ln in c.lines]
+            lines=[LineOut(entry_id=ln.request_id, kind=ln.kind, day=ln.day, minutes=ln.minutes,
+                           effect=ln.effect, due_on=ln.due_on, late=ln.late) for ln in c.lines]
             if with_lines else [],
         )
 

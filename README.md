@@ -89,7 +89,7 @@ uv run uvicorn tempo_ledger.api.app:app --reload   # http://127.0.0.1:8000/docs
 ```
 
 La API actual es la del **prototipo inicial**: trabaja con un almacén en memoria y reglas
-simplificadas (sin corte del día 25, aprobaciones ni excepciones). En F3 pasa a leer la base
+simplificadas (ya cierra por fecha de corte, pero sin aprobaciones ni excepciones). En F3 pasa a leer la base
 con el motor completo y suma las consultas del plan.
 
 ## Funcionalidades previstas

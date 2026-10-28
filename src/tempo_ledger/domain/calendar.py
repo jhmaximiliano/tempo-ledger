@@ -10,6 +10,7 @@ que los datos ficticios tengan días no laborables realistas.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import date, timedelta
 
 from tempo_ledger.domain.models import Period
@@ -53,18 +54,50 @@ def add_business_days(d: date, n: int) -> date:
     return d
 
 
+@dataclass(frozen=True, slots=True)
+class Calendar:
+    """Reglas de fechas de los cierres. Se pasa como parámetro para poder simular otras."""
+
+    cutoff_day: int = CUTOFF_DAY  # si no es hábil, el corte retrocede al día hábil anterior
+    effective_business_days: int = EFFECTIVE_BUSINESS_DAYS  # días hábiles del corte a la efectiva
+
+    def __post_init__(self) -> None:
+        if not 1 <= self.cutoff_day <= 31:
+            raise ValueError("cutoff_day debe estar entre 1 y 31")
+        if self.effective_business_days < 0:
+            raise ValueError("effective_business_days no puede ser negativo")
+
+    def cutoff(self, period: Period) -> date:
+        d = date(period.year, period.month, min(self.cutoff_day, period.end.day))
+        while not is_business_day(d):
+            d -= timedelta(days=1)
+        return d
+
+    def effective(self, period: Period) -> date:
+        return add_business_days(self.cutoff(period), self.effective_business_days)
+
+    def closing_of(self, d: date) -> Period:
+        """El cierre cuya ventana (corte anterior, corte] contiene la fecha `d`."""
+        p = Period.of(d)
+        return p.next() if d > self.cutoff(p) else p
+
+    def window(self, period: Period) -> tuple[date, date]:
+        """Primer y último día del cierre, ambos incluidos."""
+        previous = Period.of(period.start - timedelta(days=1))
+        return self.cutoff(previous) + timedelta(days=1), self.cutoff(period)
+
+
+DEFAULT_CALENDAR = Calendar()
+
+
 def cutoff_date(period: Period) -> date:
-    d = date(period.year, period.month, CUTOFF_DAY)
-    while not is_business_day(d):
-        d -= timedelta(days=1)
-    return d
+    return DEFAULT_CALENDAR.cutoff(period)
 
 
 def effective_date(period: Period) -> date:
-    return add_business_days(cutoff_date(period), EFFECTIVE_BUSINESS_DAYS)
+    return DEFAULT_CALENDAR.effective(period)
 
 
 def closing_period(d: date) -> Period:
     """El cierre cuya ventana (corte anterior, corte] contiene la fecha `d`."""
-    p = Period.of(d)
-    return p.next() if d > cutoff_date(p) else p
+    return DEFAULT_CALENDAR.closing_of(d)
