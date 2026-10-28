@@ -43,26 +43,26 @@ def export_xlsx(ds: Dataset, path: Path) -> Path:
     ws.title = "Resumen"
     _summary(ws, ds, names)
 
-    _table(wb.create_sheet("Empleados"),
+    write_table(wb.create_sheet("Empleados"),
            ["id", "nombre", "equipo", "modalidad", "sede", "ingreso", "cese", "perfil",
             "caso borde"],
            ([e.id, e.full_name, e.team, e.modality.value, e.site, e.hired_on, e.terminated_on,
              ds.profiles.get(e.id, ""), edge_of.get(e.id, "")] for e in ds.employees))
-    _table(wb.create_sheet("Cierres"), ["periodo", "fecha de corte", "fecha efectiva"],
+    write_table(wb.create_sheet("Cierres"), ["periodo", "fecha de corte", "fecha efectiva"],
            ([c.period, c.cutoff, c.effective] for c in ds.closings))
-    _table(wb.create_sheet("Solicitudes"),
+    write_table(wb.create_sheet("Solicitudes"),
            ["id", "empleado", "nombre", "tipo", "estado", "desde", "hasta", "minutos", "horas",
             "registrada", "resuelta", "motivo"],
            ([r.id, r.employee_id, names[r.employee_id], r.kind.value, r.status.value,
              r.start_date, r.end_date, r.minutes, round(r.minutes / 60, 2), r.registered_at,
              r.decided_at, r.reason] for r in ds.requests))
-    _table(wb.create_sheet("Asistencia"),
+    write_table(wb.create_sheet("Asistencia"),
            ["empleado", "nombre", "día", "entrada", "sale almuerzo", "vuelve almuerzo",
             "salida", "tarde (min)", "almuerzo (min)"],
            ([a.employee_id, names[a.employee_id], a.day, a.check_in, a.lunch_out, a.lunch_in,
              a.check_out, _late(a.check_in), _span(a.lunch_out, a.lunch_in)]
             for a in ds.attendance))
-    _table(wb.create_sheet("Excepciones"),
+    write_table(wb.create_sheet("Excepciones"),
            ["periodo", "empleado", "nombre", "tipo", "minutos", "motivo"],
            ([x.period, x.employee_id, names[x.employee_id], x.kind.value, x.minutes, x.reason]
             for x in ds.exceptions))
@@ -114,10 +114,10 @@ def _summary(ws: Worksheet, ds: Dataset, names: dict[int, str]) -> None:
         if cell.value in ("Solicitudes por tipo y estado", "Perfiles de comportamiento",
                           "Casos borde (qué mirar)"):
             cell.font = Font(bold=True)
-    _autowidth(ws)
+    autowidth(ws)
 
 
-def _table(ws: Worksheet, header: list[str], rows: object) -> None:
+def write_table(ws: Worksheet, header: list[str], rows: object) -> None:
     ws.append(header)
     for row in rows:  # type: ignore[attr-defined]
         ws.append(row)
@@ -136,10 +136,10 @@ def _table(ws: Worksheet, header: list[str], rows: object) -> None:
                 cell.number_format = "hh:mm"
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = ws.dimensions
-    _autowidth(ws)
+    autowidth(ws)
 
 
-def _autowidth(ws: Worksheet, sample: int = 400) -> None:
+def autowidth(ws: Worksheet, sample: int = 400) -> None:
     # iter_cols crea las celdas que recorre: no pasar de la última fila con datos.
     for column in ws.iter_cols(max_row=min(sample, ws.max_row)):
         width = max((_width(c.value) for c in column), default=8)

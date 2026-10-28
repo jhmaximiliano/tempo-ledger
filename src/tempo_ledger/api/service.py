@@ -77,6 +77,13 @@ class LedgerService:
         self.report(period)  # valida que el cierre exista
         return closing_events(self.dataset().requests, period, self.policy, self.calendar)
 
+    def simulate(self, period: Period, calendar: Calendar,
+                 policy: Policy | None = None) -> tuple[ClosingReport, ClosingReport]:
+        """(simulado, real) del cierre con otro calendario o política. No guarda nada."""
+        baseline = self.report(period)
+        simulated = self._chain.invoke(ClosingRequest(period, policy or self.policy, calendar))
+        return simulated, baseline
+
     def request(self, request_id: int) -> RequestRec:
         rec = self.repo.request(request_id)
         if rec is None:

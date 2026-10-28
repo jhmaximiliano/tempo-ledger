@@ -1,6 +1,6 @@
 [project]
 name = "tempo-ledger"
-version = "0.2.0"
+version = "0.3.0"
 description = "Banco de horas como libro contable: cada evento es un asiento y el saldo de cualquier cierre se reconstruye sumándolos."
 readme = "README.md"
 license = "MIT"
@@ -38,7 +38,7 @@ packages = ["src/tempo_ledger"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "tests"]
 
 [tool.ruff]
 line-length = 100

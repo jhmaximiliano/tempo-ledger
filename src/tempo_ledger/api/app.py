@@ -14,7 +14,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
 
 from tempo_ledger import __version__
 from tempo_ledger.api.schemas import (
@@ -28,13 +28,17 @@ from tempo_ledger.api.schemas import (
     RequestIn,
     RequestOut,
     SeriesPointOut,
+    SimulationIn,
+    SimulationOut,
 )
 from tempo_ledger.api.service import LedgerService, NotFound
 from tempo_ledger.data.generator import generate
-from tempo_ledger.domain.models import Period
+from tempo_ledger.domain.calendar import Calendar
+from tempo_ledger.domain.models import Period, Policy
 from tempo_ledger.domain.requests import RequestConflict, RequestError
 from tempo_ledger.infra import db, load
 from tempo_ledger.infra.repository import LedgerRepository
+from tempo_ledger.pipeline.excel import closing_workbook
 from tempo_ledger.settings import Settings
 
 
@@ -43,6 +47,7 @@ def _service(request: Request) -> LedgerService:
 
 
 Service = Annotated[LedgerService, Depends(_service)]
+XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -110,6 +115,22 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         names = {e.id: e.full_name for e in svc.dataset().employees}
         return EventsOut.of(str(target), svc.report(target).effective,
                             [EventOut.of(e, names[e.employee_id]) for e in events])
+
+    @app.get("/closings/{period}/export.xlsx", response_class=Response,
+             responses={200: {"content": {XLSX: {}}}})
+    def closing_export(period: str, svc: Service) -> Response:
+        report = _call(svc.report, _period(period))
+        return Response(closing_workbook(report), media_type=XLSX, headers={
+            "Content-Disposition": f'attachment; filename="cierre-{report.period}.xlsx"'})
+
+    @app.post("/simulations", response_model=SimulationOut)
+    def simulate(body: SimulationIn, svc: Service) -> SimulationOut:
+        """Recalcula un cierre con otro calendario o vencimiento, sin guardar nada."""
+        calendar = Calendar(body.cutoff_day, body.effective_business_days)
+        policy = (Policy(body.debit_expiry_days) if body.debit_expiry_days is not None
+                  else svc.policy)
+        simulated, baseline = _call(svc.simulate, _period(body.period), calendar, policy)
+        return SimulationOut.of(body, policy.debit_expiry_days, simulated, baseline)
 
     @app.get("/employees/{employee_id}/closings/{period}", response_model=ClosingOut)
     def employee_closing(employee_id: int, period: str, svc: Service) -> ClosingOut:
