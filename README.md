@@ -13,9 +13,9 @@ Proyecto personal de práctica. **Todos los datos son ficticios**: los genera un
 reproducible y no corresponden a ninguna persona real. El producto **no usa modelos de IA**
 ([ADR-0009](docs/adr/0009-sin-ia-generativa.md)).
 
-**Estado:** F1 terminada (`v0.1.0`): modelo de datos y generador ficticio. El motor de
-reglas completo llega en F2. Ver la [hoja de ruta](#hoja-de-ruta) y el
-[plan](docs/PLAN.md).
+**Estado:** F2 terminada (`v0.2.0`): el motor aplica todas las reglas del libro y el
+cierre corre como cadena LCEL. Sigue F3, la API sobre la base. Ver la
+[hoja de ruta](#hoja-de-ruta) y el [plan](docs/PLAN.md).
 
 ## Reglas del libro
 
@@ -125,7 +125,8 @@ una cadena de pasos; ningún paso llama a un modelo
 
 ```
 src/tempo_ledger/
-  domain/      modelos, catálogos, calendario de cierres y motor (Python puro)
+  domain/      modelos, catálogos, calendario, asientos, asistencia y motor (Python puro)
+  pipeline/    cadena LCEL del cierre: cargar | validar | reglas | cerrar | reporte
   data/        generador ficticio y exportación a Excel
   infra/       tablas SQLAlchemy, conexión y carga de datos
   migrations/  migraciones de Alembic
@@ -163,7 +164,7 @@ Cada fase cierra con pruebas en verde, PR integrado y una etiqueta de versión.
 
 - [x] **F0** — Plan y ADR.
 - [x] **F1** — Modelo de datos (SQLAlchemy + Alembic) y generador ficticio · `v0.1.0`
-- [ ] **F2** — Motor de reglas y cadena LCEL del cierre · `v0.2.0`
+- [x] **F2** — Motor de reglas y cadena LCEL del cierre · `v0.2.0`
 - [ ] **F3** — API sobre la base, herramientas LangChain, Excel y simulación · `v0.3.0`
 - [ ] **F4** — Web con las 5 vistas · `v0.4.0`
 - [ ] **F5** — Calidad, Docker Compose y CI/CD · `v0.5.0`

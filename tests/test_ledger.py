@@ -10,7 +10,6 @@ from tempo_ledger.data.generator import (
     AttendanceRec,
     ExceptionRec,
     RequestRec,
-    generate,
 )
 from tempo_ledger.domain import (
     DEFAULT_CALENDAR,
@@ -21,10 +20,8 @@ from tempo_ledger.domain import (
     Posting,
     Status,
     close_periods,
-    ledger_until,
     to_postings,
 )
-from tempo_ledger.domain.attendance import incidents
 from tempo_ledger.domain.catalog import ExceptionKind, RequestKind, RequestStatus
 
 POLICY = Policy(debit_expiry_days=30)
@@ -280,84 +277,3 @@ def test_las_ventanas_cubren_cada_dia_una_sola_vez(calendar):
         first, last = calendar.window(period)
         assert first <= d <= last
         d += timedelta(days=1)
-
-
-# --- Invariantes sobre el conjunto generado ---------------------------------------------
-
-DATASET = generate(seed=123, employees=60)
-POSTINGS = to_postings(DATASET.requests, POLICY)
-HASTA = max(p.period for p in POSTINGS)  # hasta que vence el último permiso
-
-
-def _historias():
-    for emp in DATASET.employees:
-        propios = [p for p in POSTINGS if p.employee_id == emp.id]
-        asistencia = [a for a in DATASET.attendance if a.employee_id == emp.id]
-        excepciones = [x for x in DATASET.exceptions if x.employee_id == emp.id]
-        historia = ledger_until(propios, HASTA, exceptions=excepciones, attendance=asistencia,
-                                terminated_on=emp.terminated_on)
-        yield emp, propios, asistencia, historia
-
-
-HISTORIAS = list(_historias())
-
-
-def test_cada_cierre_cuadra():
-    for _, _, _, historia in HISTORIAS:
-        for c in historia:
-            assert c.balance == c.opening + c.credits - c.due
-            assert c.deduction >= 0 and c.waived >= 0
-            if c.settlement is None:
-                assert c.closing == c.balance + c.deduction
-                assert c.deduction + c.waived == max(0, -c.balance)
-            else:
-                assert c.settlement == c.balance - c.pending - c.unrecoverable_late
-                assert (c.deduction, c.waived, c.closing) == (0, 0, 0)
-
-
-def test_los_cierres_se_encadenan():
-    for _, _, _, historia in HISTORIAS:
-        for anterior, siguiente in zip(historia, historia[1:], strict=False):
-            assert siguiente.opening == anterior.closing
-            assert siguiente.period == anterior.period.next()
-
-
-def test_cada_asiento_se_cuenta_exactamente_una_vez():
-    """Trazabilidad: cada hora a favor suma una vez y cada permiso vence (o se liquida) una vez."""
-    for _, propios, _, historia in HISTORIAS:
-        efectos = [(ln.request_id, ln.effect) for c in historia for ln in c.lines]
-        for p in propios:
-            if p.is_credit:
-                assert efectos.count((p.request_id, Effect.CREDIT)) == 1, p
-            elif p.is_debit:
-                vence = efectos.count((p.request_id, Effect.DUE))
-                liquida = efectos.count((p.request_id, Effect.SETTLED))
-                assert vence + liquida == 1, p
-
-
-def test_cada_incidencia_se_cuenta_exactamente_una_vez():
-    for _, propios, asistencia, historia in HISTORIAS:
-        esperadas = [i for i in incidents(asistencia, propios)
-                     if DEFAULT_CALENDAR.closing_of(i.day) <= historia[-1].period]
-        contadas = [i for c in historia for i in c.incidents]
-        assert sorted(contadas, key=repr) == sorted(esperadas, key=repr)
-
-
-def test_los_ceses_cierran_con_finiquito_y_sin_cierres_posteriores():
-    ceses = [(emp, historia) for emp, _, _, historia in HISTORIAS if emp.terminated_on]
-    assert ceses
-    for emp, historia in ceses:
-        assert historia[-1].period == DEFAULT_CALENDAR.closing_of(emp.terminated_on)
-        assert historia[-1].settlement is not None
-        assert all(c.settlement is None for c in historia[:-1])
-        if historia[-1].settlement < 0:
-            assert historia[-1].status is Status.AGAINST
-
-
-def test_el_caso_borde_de_excepcion_parcial_omite_parte_del_descuento():
-    emp = DATASET.edge_cases["excepcion_parcial"]
-    [historia] = [h for e, _, _, h in HISTORIAS if e.id == emp]
-    [abril] = [c for c in historia if c.period == APR]
-    if abril.balance < 0:
-        assert abril.waived == min(480, -abril.balance)
-        assert abril.status is Status.EXCEPTION

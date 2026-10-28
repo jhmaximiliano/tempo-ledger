@@ -3,9 +3,15 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con
 [SemVer](https://semver.org/lang/es/). Cada fase del plan (`docs/PLAN.md`) cierra con una versión.
 
-## [Sin publicar]
+## [0.2.0] — 2026-10-28 · F2: motor de reglas y cadena LCEL
 
 ### Añadido
+- Cadena LCEL del cierre con `langchain-core` (`pipeline/closing.py`):
+  `cargar | validar | reglas | cerrar | reporte`, con las tres preparaciones de `reglas` en
+  paralelo. Ningún paso llama a un modelo (ADR-0002). Carga desde el generador o desde la
+  base.
+- Invariantes del libro sobre el conjunto generado completo con tres semillas
+  (`tests/test_invariants.py`).
 - Conversión de solicitudes en asientos (`domain/postings.py`): solo las aprobadas cuentan;
   las horas a favor suman en el cierre de su fecha, los permisos en el de su vencimiento y
   vacaciones y licencia médica son informativas. Una aprobada después de la fecha efectiva
@@ -26,6 +32,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
   `main` y en cada pull request, con su indicador en el README. Adelanta una parte de F5.
 
 ### Cambiado
+- El generador ubica las excepciones «no descontar» en cierres que, sin ellas, tendrían
+  descuento: así la regla aparece en los datos.
 - README reescrito según el plan aprobado: reglas, comandos, arquitectura y hoja de ruta F0–F7.
 - La configuración toma por defecto 60 empleados y el periodo del generador (2025-01 a 2026-12).
 - El generador usa el plazo de vencimiento de la política del libro en vez de un 30 fijo.
