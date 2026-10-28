@@ -38,6 +38,8 @@ class RequestLike(Protocol):
     @property
     def start_date(self) -> date: ...
     @property
+    def end_date(self) -> date: ...
+    @property
     def minutes(self) -> int: ...
     @property
     def decided_at(self) -> datetime | None: ...
@@ -80,14 +82,19 @@ def to_postings(
 def _posting(r: RequestLike, policy: Policy, calendar: Calendar) -> Posting:
     if r.decided_at is None:
         raise ValueError(f"la solicitud {r.id} está aprobada pero no tiene fecha de aprobación")
-    due_on = (r.start_date + timedelta(days=policy.debit_expiry_days) if r.kind.is_debit
-              else r.start_date)
+    due_on = affects_on(r, policy)
     natural = calendar.closing_of(due_on)
     period = _counting_period(natural, r.decided_at.date(), calendar)
     return Posting(
         request_id=r.id, employee_id=r.employee_id, kind=r.kind, day=r.start_date,
         minutes=r.minutes, due_on=due_on, period=period, late=period != natural,
     )
+
+
+def affects_on(r: RequestLike, policy: Policy) -> date:
+    """Cuándo afecta: su fecha si suma o es informativa; el vencimiento si es permiso."""
+    return (r.start_date + timedelta(days=policy.debit_expiry_days) if r.kind.is_debit
+            else r.start_date)
 
 
 def _counting_period(natural: Period, approved_on: date, calendar: Calendar) -> Period:

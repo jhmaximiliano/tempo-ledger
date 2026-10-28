@@ -3,6 +3,22 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con
 [SemVer](https://semver.org/lang/es/). Cada fase del plan (`docs/PLAN.md`) cierra con una versión.
 
+## [Sin publicar]
+
+### Añadido
+- La API lee y escribe la base de datos (`infra/repository.py`) y calcula con la cadena
+  LCEL; al arrancar migra la base y la llena con datos ficticios si está vacía
+  (`TEMPO_AUTO_SEED`). Los reportes se guardan por cierre hasta la próxima escritura.
+- Rutas nuevas: calendario de cierres, saldos del cierre, detalle por empleado, eventos con
+  semáforo (`domain/events.py`), serie mensual, alta y decisión de solicitudes.
+- Validación de solicitudes nuevas (`domain/requests.py`): vínculo laboral, fechas, minutos
+  y cruces entre ausencias de jornada completa.
+
+### Quitado
+- El prototipo: almacén en memoria (`store.py`), generador viejo (`data/synthetic.py`),
+  `POST /entries` y los modelos `Entry`/`EntryKind`. Variables `TEMPO_FIRST_PERIOD` y
+  `TEMPO_LAST_PERIOD`.
+
 ## [0.2.0] — 2026-10-28 · F2: motor de reglas y cadena LCEL
 
 ### Añadido

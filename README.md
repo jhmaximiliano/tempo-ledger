@@ -82,15 +82,26 @@ Opciones: `--seed` y `--employees` en ambos comandos, `--url` en `seed` y `--out
 Para cambiar las reglas, la base o los datos: `cp .env.example .env`, ajustar los valores y
 anteponer `--env-file .env` a los comandos (`uv run --env-file .env tempo-ledger seed`).
 
-### API (prototipo)
+### API
 
 ```bash
 uv run uvicorn tempo_ledger.api.app:app --reload   # http://127.0.0.1:8000/docs
 ```
 
-La API actual es la del **prototipo inicial**: trabaja con un almacén en memoria y reglas
-simplificadas (ya cierra por fecha de corte, pero sin aprobaciones ni excepciones). En F3 pasa a leer la base
-con el motor completo y suma las consultas del plan.
+Al arrancar migra la base y, si está vacía, la llena con datos ficticios: no hace falta
+correr `seed` antes. Todos los tiempos van en **minutos**.
+
+| Método | Ruta | Qué devuelve |
+|---|---|---|
+| `GET` | `/periods` | Calendario de cierres: corte y fecha efectiva |
+| `GET` | `/employees` · `/employees/{id}` | Empleados ficticios |
+| `GET` | `/closings/{AAAA-MM}` | Saldos del cierre para todos, con estado y totales |
+| `GET` | `/closings/{AAAA-MM}/events` | Solicitudes del cierre con su semáforo |
+| `GET` | `/employees/{id}/closings/{AAAA-MM}` | La cuenta del cierre paso a paso: líneas, incidencias y explicación |
+| `GET` | `/employees/{id}/series?until=AAAA-MM` | El saldo cierre a cierre |
+| `POST` | `/requests` | Registra una solicitud (queda pendiente) |
+| `POST` | `/requests/{id}/decision` | Aprueba, rechaza o anula una pendiente |
+| `GET` | `/requests/{id}` | Una solicitud |
 
 ## Funcionalidades previstas
 
@@ -128,9 +139,9 @@ src/tempo_ledger/
   domain/      modelos, catálogos, calendario, asientos, asistencia y motor (Python puro)
   pipeline/    cadena LCEL del cierre: cargar | validar | reglas | cerrar | reporte
   data/        generador ficticio y exportación a Excel
-  infra/       tablas SQLAlchemy, conexión y carga de datos
+  infra/       tablas SQLAlchemy, conexión, carga de datos y repositorio
   migrations/  migraciones de Alembic
-  api/         FastAPI: rutas y contratos
+  api/         FastAPI: rutas, contratos y servicio
   cli.py       comandos `seed` y `export`
 tests/         reglas caso por caso + invariantes sobre los datos generados
 docs/          plan y registro de decisiones (ADR)

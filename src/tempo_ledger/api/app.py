@@ -3,44 +3,67 @@
 Ejecutar en local:
     uv run uvicorn tempo_ledger.api.app:app --reload
 Documentación interactiva: http://127.0.0.1:8000/docs
+
+Al arrancar migra la base (`TEMPO_DATABASE_URL`) y, si está vacía, la llena con datos
+ficticios (`TEMPO_SEED`, `TEMPO_EMPLOYEES`; se desactiva con `TEMPO_AUTO_SEED=false`).
 """
 
 from __future__ import annotations
 
-from collections import Counter
-from datetime import datetime, time
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from typing import Annotated
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 
 from tempo_ledger import __version__
 from tempo_ledger.api.schemas import (
     ClosingOut,
+    DecisionIn,
     EmployeeOut,
-    EntryIn,
-    EntryOut,
-    MonthReportOut,
+    EventOut,
+    EventsOut,
+    PeriodOut,
+    ReportOut,
+    RequestIn,
+    RequestOut,
+    SeriesPointOut,
 )
-from tempo_ledger.data import generate
-from tempo_ledger.data.generator import RequestRec
-from tempo_ledger.domain.catalog import RequestKind, RequestStatus
-from tempo_ledger.domain.ledger import ledger_until
-from tempo_ledger.domain.models import Entry, EntryKind, Period, Policy
-from tempo_ledger.domain.postings import Posting, to_postings
+from tempo_ledger.api.service import LedgerService, NotFound
+from tempo_ledger.data.generator import generate
+from tempo_ledger.domain.models import Period
+from tempo_ledger.domain.requests import RequestConflict, RequestError
+from tempo_ledger.infra import db, load
+from tempo_ledger.infra.repository import LedgerRepository
 from tempo_ledger.settings import Settings
-from tempo_ledger.store import InMemoryStore
 
 
-def create_app(settings: Settings | None = None, store: InMemoryStore | None = None) -> FastAPI:
+def _service(request: Request) -> LedgerService:
+    return request.app.state.service
+
+
+Service = Annotated[LedgerService, Depends(_service)]
+
+
+def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings.from_env()
-    if store is None:
-        employees, entries = generate(settings.seed, settings.employees,
-                                      settings.first, settings.last)
-        store = InMemoryStore(employees, entries)
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        db.upgrade(settings.database_url)
+        engine = db.make_engine(settings.database_url)
+        repo = LedgerRepository(engine)
+        if settings.auto_seed and repo.is_empty():
+            load.save(engine, generate(settings.seed, settings.employees))
+        app.state.service = LedgerService(repo, settings.policy)
+        yield
+        engine.dispose()
 
     app = FastAPI(
         title="tempo-ledger",
         version=__version__,
-        description="Banco de horas como libro contable. Datos ficticios.",
+        description="Banco de horas como libro contable. Datos ficticios. Tiempos en minutos.",
+        lifespan=lifespan,
     )
 
     def _period(text: str) -> Period:
@@ -49,66 +72,74 @@ def create_app(settings: Settings | None = None, store: InMemoryStore | None = N
         except ValueError as exc:
             raise HTTPException(422, "periodo inválido: se espera AAAA-MM") from exc
 
+    def _call(fn, *args, **kwargs):
+        """Traduce los errores del dominio a códigos HTTP."""
+        try:
+            return fn(*args, **kwargs)
+        except NotFound as exc:
+            raise HTTPException(404, str(exc)) from exc
+        except RequestConflict as exc:
+            raise HTTPException(409, str(exc)) from exc
+        except RequestError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
     @app.get("/health")
     def health() -> dict[str, str]:
         return {"status": "ok", "version": __version__}
 
+    @app.get("/periods", response_model=list[PeriodOut])
+    def periods(svc: Service) -> list[PeriodOut]:
+        return [PeriodOut.of(c) for c in svc.periods()]
+
     @app.get("/employees", response_model=list[EmployeeOut])
-    def list_employees() -> list[EmployeeOut]:
-        return [EmployeeOut.of(e) for e in store.employees()]
+    def employees(svc: Service) -> list[EmployeeOut]:
+        return [EmployeeOut.of(e) for e in svc.dataset().employees]
 
-    @app.get("/employees/{employee_id}/ledger", response_model=list[ClosingOut])
-    def employee_ledger(
-        employee_id: int,
-        until: str = Query(default=str(settings.last), description="Último periodo, AAAA-MM"),
-    ) -> list[ClosingOut]:
-        if store.employee(employee_id) is None:
-            raise HTTPException(404, f"no existe el empleado {employee_id}")
-        postings = _postings(store.entries_of(employee_id), settings.policy)
-        closings = ledger_until(postings, _period(until))
-        return [ClosingOut.of(c) for c in closings]
+    @app.get("/employees/{employee_id}", response_model=EmployeeOut)
+    def employee(employee_id: int, svc: Service) -> EmployeeOut:
+        return EmployeeOut.of(_call(svc.employee, employee_id))
 
-    @app.get("/closings/{period}", response_model=MonthReportOut)
-    def month_report(period: str) -> MonthReportOut:
+    @app.get("/closings/{period}", response_model=ReportOut)
+    def closing_report(period: str, svc: Service) -> ReportOut:
+        return ReportOut.of(_call(svc.report, _period(period)))
+
+    @app.get("/closings/{period}/events", response_model=EventsOut)
+    def closing_events(period: str, svc: Service) -> EventsOut:
         target = _period(period)
-        closings = []
-        for emp in store.employees():
-            history = ledger_until(_postings(store.entries_of(emp.id), settings.policy), target)
-            # El saldo de un mes depende de toda la historia anterior: se cierra desde el
-            # primer asiento y se toma solo el último cierre.
-            if history:
-                closings.append(history[-1])
-        return MonthReportOut(
-            period=str(target),
-            employees=len(closings),
-            total_deduction=sum(c.deduction for c in closings),
-            by_status=dict(Counter(str(c.status) for c in closings)),
-            closings=[ClosingOut.of(c, with_lines=False) for c in closings],
-        )
+        events = _call(svc.events, target)
+        names = {e.id: e.full_name for e in svc.dataset().employees}
+        return EventsOut.of(str(target), svc.report(target).effective,
+                            [EventOut.of(e, names[e.employee_id]) for e in events])
 
-    @app.post("/entries", response_model=EntryOut, status_code=201)
-    def add_entry(body: EntryIn) -> EntryOut:
-        try:
-            entry = store.add_entry(body.employee_id, body.kind, body.day, body.minutes, body.note)
-        except KeyError as exc:
-            raise HTTPException(404, str(exc).strip("'")) from exc
-        return EntryOut.of(entry)
+    @app.get("/employees/{employee_id}/closings/{period}", response_model=ClosingOut)
+    def employee_closing(employee_id: int, period: str, svc: Service) -> ClosingOut:
+        return ClosingOut.of(_call(svc.closing, employee_id, _period(period)))
+
+    @app.get("/employees/{employee_id}/series", response_model=list[SeriesPointOut])
+    def employee_series(
+        employee_id: int,
+        svc: Service,
+        until: str | None = Query(default=None, description="Último cierre, AAAA-MM"),
+    ) -> list[SeriesPointOut]:
+        history = _call(svc.history, employee_id, _period(until) if until else None)
+        return [SeriesPointOut.of(c) for c in history]
+
+    @app.get("/requests/{request_id}", response_model=RequestOut)
+    def get_request(request_id: int, svc: Service) -> RequestOut:
+        return RequestOut.of(_call(svc.request, request_id))
+
+    @app.post("/requests", response_model=RequestOut, status_code=201)
+    def add_request(body: RequestIn, svc: Service) -> RequestOut:
+        rec = _call(svc.add_request, body.employee_id, body.kind, body.start_date,
+                    body.end_date or body.start_date, body.minutes, body.reason,
+                    body.registered_at)
+        return RequestOut.of(rec)
+
+    @app.post("/requests/{request_id}/decision", response_model=RequestOut)
+    def decide(request_id: int, body: DecisionIn, svc: Service) -> RequestOut:
+        return RequestOut.of(_call(svc.decide, request_id, body.status, body.decided_at))
 
     return app
-
-
-def _postings(entries: list[Entry], policy: Policy) -> list[Posting]:
-    """Puente del prototipo (se retira en F3): cada asiento crudo se lee como una solicitud
-    aprobada el mismo día; las horas a favor como horas extra y los permisos como permisos
-    por horas."""
-    kinds = {EntryKind.CREDIT: RequestKind.OVERTIME, EntryKind.DEBIT: RequestKind.LEAVE_HOURS}
-    requests = [
-        RequestRec(e.id, e.employee_id, kinds[e.kind], RequestStatus.APPROVED, e.day, e.day,
-                   e.minutes, datetime.combine(e.day, time()), datetime.combine(e.day, time()),
-                   e.note)
-        for e in entries
-    ]
-    return to_postings(requests, policy)
 
 
 app = create_app()
