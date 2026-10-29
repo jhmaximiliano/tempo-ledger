@@ -1,8 +1,9 @@
-"""Línea de comandos: `tempo-ledger seed` y `tempo-ledger export`.
+"""Línea de comandos: `tempo-ledger seed`, `export` y `openapi`.
 
     uv run tempo-ledger seed                 # migra la base y la llena con datos ficticios
     uv run tempo-ledger export               # muestra en exports/muestra.xlsx
     uv run tempo-ledger export --seed 7 --employees 30 --out exports/otra.xlsx
+    uv run tempo-ledger openapi              # contrato de la API en frontend/openapi.json
 
 La semilla y la cantidad de empleados salen de TEMPO_SEED y TEMPO_EMPLOYEES si no se pasan.
 """
@@ -10,6 +11,7 @@ La semilla y la cantidad de empleados salen de TEMPO_SEED y TEMPO_EMPLOYEES si n
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from pathlib import Path
 
@@ -30,7 +32,17 @@ def main(argv: list[str] | None = None) -> None:
     sub.choices["seed"].add_argument("--url", default=None,
                                      help="URL de la base (por defecto TEMPO_DATABASE_URL)")
     sub.choices["export"].add_argument("--out", type=Path, default=Path("exports/muestra.xlsx"))
+    sub.add_parser("openapi", help="escribe el contrato de la API (lo usa la web para sus tipos)"
+                   ).add_argument("--out", type=Path, default=Path("frontend/openapi.json"))
     args = parser.parse_args(argv)
+
+    if args.command == "openapi":
+        from tempo_ledger.api.app import create_app  # solo este comando necesita la API
+
+        args.out.write_text(json.dumps(create_app().openapi(), ensure_ascii=False, indent=2),
+                            encoding="utf-8")
+        print(f"contrato escrito: {args.out}")
+        return
 
     ds = generate(args.seed, args.employees)
     if args.command == "seed":

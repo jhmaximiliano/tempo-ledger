@@ -66,7 +66,7 @@ misma semilla, siempre el mismo conjunto para enero 2025 – diciembre 2026 (24 
 
 ## Ejecutar en local
 
-Requisitos: Python 3.13 y [uv](https://docs.astral.sh/uv/).
+Requisitos: Python 3.13 y [uv](https://docs.astral.sh/uv/); para la web, Node.js 24.
 
 ```bash
 uv sync                          # crea el entorno e instala dependencias
@@ -107,6 +107,26 @@ correr `seed` antes. Todos los tiempos van en **minutos**.
 
 Las consultas de saldo, eventos y serie también existen como herramientas de LangChain
 (`api/tools.py`), listas para que algún día las use un modelo.
+
+### Web
+
+Con la API corriendo, en otra terminal:
+
+```bash
+cd frontend
+npm install        # la primera vez
+npm run dev        # http://localhost:5173
+```
+
+La web le pide los datos a la API en `http://127.0.0.1:8000`. Si la API corre en otro puerto:
+`$env:TEMPO_API_URL = "http://127.0.0.1:8001"; npm run dev` (PowerShell).
+
+Por ahora tiene dos vistas: los **saldos del cierre** (todos los empleados, con filtros por
+estado, equipo y nombre, y descarga a Excel) y **la cuenta del cierre** de cada empleado
+(asientos, asistencia y finiquito si cesó).
+
+Los tipos de TypeScript salen del contrato de la API: si cambia la API, se regeneran con
+`uv run tempo-ledger openapi` y `npm run types`. El CI avisa si quedaron desalineados.
 
 ## Funcionalidades
 
@@ -150,7 +170,8 @@ src/tempo_ledger/
   infra/       tablas SQLAlchemy, conexión, carga de datos y repositorio
   migrations/  migraciones de Alembic
   api/         FastAPI: rutas, contratos, servicio y herramientas de LangChain
-  cli.py       comandos `seed` y `export`
+  cli.py       comandos `seed`, `export` y `openapi`
+frontend/      web: React + Vite + TypeScript + Tailwind + TanStack Query
 tests/         reglas caso por caso + invariantes sobre los datos generados
 docs/          plan y registro de decisiones (ADR)
 ```

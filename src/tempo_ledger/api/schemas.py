@@ -185,6 +185,8 @@ class SimulationIn(BaseModel):
     debit_expiry_days: int | None = Field(default=None, ge=0, le=365,
                                           description="Vencimiento de permisos; por defecto "
                                           "el configurado")
+    include_rows: bool = Field(default=False, description="Incluir el cierre simulado de "
+                               "cada empleado, no solo los que cambian")
 
 
 class ChangeOut(BaseModel):
@@ -203,10 +205,10 @@ class SimulationOut(BaseModel):
     cutoff_day: int
     effective_business_days: int
     debit_expiry_days: int
-    simulated: ReportOut
+    changes: list[ChangeOut]  # solo los empleados a los que la simulación les cambia algo
     baseline_total_deduction: int
     baseline_by_status: dict[str, int]
-    changes: list[ChangeOut]
+    simulated: ReportOut  # `rows` vacío salvo con include_rows
 
     @classmethod
     def of(cls, body: SimulationIn, expiry: int, simulated: ClosingReport,
@@ -224,11 +226,14 @@ class SimulationOut(BaseModel):
                     status_before=b.closing.status, status_after=r.closing.status,
                     closing_before=b.closing.closing, closing_after=r.closing.closing,
                     deduction_before=b.closing.deduction, deduction_after=r.closing.deduction))
+        report = ReportOut.of(simulated)
+        if not body.include_rows:
+            report.rows = []
         return cls(period=str(simulated.period), cutoff_day=body.cutoff_day,
                    effective_business_days=body.effective_business_days,
-                   debit_expiry_days=expiry, simulated=ReportOut.of(simulated),
+                   debit_expiry_days=expiry, changes=changes,
                    baseline_total_deduction=baseline.total_deduction,
-                   baseline_by_status=baseline.by_status, changes=changes)
+                   baseline_by_status=baseline.by_status, simulated=report)
 
 
 class RequestIn(BaseModel):

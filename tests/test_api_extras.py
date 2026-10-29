@@ -64,6 +64,16 @@ def test_simular_otro_corte_no_guarda_nada(client):
     assert client.get(f"/closings/{MARZO}").json() == antes
 
 
+def test_la_simulacion_trae_las_filas_solo_si_se_piden(client):
+    corta = client.post("/simulations", json={"period": MARZO, "cutoff_day": 15}).json()
+    assert list(corta)[4] == "changes"  # lo importante, primero
+    assert corta["simulated"]["rows"] == []
+    assert corta["simulated"]["employees"] > 0
+    completa = client.post("/simulations", json={"period": MARZO, "cutoff_day": 15,
+                                                 "include_rows": True}).json()
+    assert len(completa["simulated"]["rows"]) == completa["simulated"]["employees"]
+
+
 def test_simular_otro_vencimiento(client):
     s = client.post("/simulations", json={"period": MARZO, "debit_expiry_days": 0}).json()
     assert s["debit_expiry_days"] == 0

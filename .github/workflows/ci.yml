@@ -33,3 +33,30 @@ jobs:
 
       - name: Pruebas (pytest)
         run: uv run pytest
+
+      # Si cambia la API, el contrato de la web debe regenerarse en el mismo PR.
+      - name: Contrato de la API al día
+        run: |
+          uv run tempo-ledger openapi --out /tmp/openapi.json
+          diff -q /tmp/openapi.json frontend/openapi.json
+
+  web:
+    name: Web (lint + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - name: Estilo (oxlint)
+        run: npm run lint
+      - name: Tipos y compilación (tsc + vite)
+        run: npm run build
