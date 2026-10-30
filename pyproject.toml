@@ -3,7 +3,7 @@ name = "tempo-ledger"
 version = "0.5.0"
 description = "Banco de horas como libro contable: cada evento es un asiento y el saldo de cualquier cierre se reconstruye sumándolos."
 readme = "README.md"
-license = "MIT"
+license = "LicenseRef-Proprietary"
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.13",

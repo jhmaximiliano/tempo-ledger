@@ -244,4 +244,5 @@ Historial de cambios en [CHANGELOG.md](CHANGELOG.md).
 
 ## Licencia
 
-[MIT](LICENSE).
+Todos los derechos reservados. Puedes leer el código y ejecutarlo para evaluarlo,
+pero no copiarlo ni reutilizarlo sin permiso. Detalle en [LICENSE](LICENSE).
