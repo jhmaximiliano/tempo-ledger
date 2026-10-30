@@ -16,6 +16,11 @@ updates:
     groups:
       web:
         patterns: ["*"]
+    ignore:
+      # Los tipos de Node siguen la versión que corre el proyecto (Node 24 en el Dockerfile y
+      # el CI). Al pasar a otra versión se cambia todo junto y se quita esta regla.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
