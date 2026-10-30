@@ -21,7 +21,7 @@ no describen la política de ninguna empresa ni son una guía legal o laboral. E
 > un minuto en despertar** (la web avisa y reintenta sola). Es de **solo lectura**: consultar,
 > simular y descargar el Excel funcionan; registrar o decidir solicitudes, solo en local.
 
-**Estado:** F6 en curso: la demo pública funciona en Render + Neon. Cada PR pasa estilo, tipos,
+**Estado:** `v1.0.0`: la demo pública funciona en Render + Neon. Cada PR pasa estilo, tipos,
 pruebas con cobertura, pruebas en PostgreSQL y la prueba de Docker. Ver la
 [hoja de ruta](#hoja-de-ruta) y el [plan](docs/PLAN.md).
 
@@ -279,7 +279,7 @@ Cada fase cierra con pruebas en verde, PR integrado y una etiqueta de versión.
 - [x] **F3** — API sobre la base, herramientas LangChain, Excel y simulación · `v0.3.0`
 - [x] **F4** — Web con las 5 vistas · `v0.4.0`
 - [x] **F5** — Calidad, Docker Compose y CI/CD · `v0.5.0`
-- [ ] **F6** — Demo pública en Render + Neon · `v1.0.0`
+- [x] **F6** — Demo pública en Render + Neon · `v1.0.0`
 - [ ] **F7** — *(Opcional)* Buscador del reglamento · `v1.1.0`
 
 Historial de cambios en [CHANGELOG.md](CHANGELOG.md).

@@ -3,7 +3,7 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con
 [SemVer](https://semver.org/lang/es/). Cada fase del plan (`docs/PLAN.md`) cierra con una versión.
 
-## [Sin publicar]
+## [1.0.0] — 2026-10-30 · F6: demo pública
 
 ### Añadido
 - **Configuración de la demo en Render** (`render.yaml`): la API con el mismo Dockerfile y la
