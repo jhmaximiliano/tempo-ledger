@@ -14,6 +14,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 - La API acepta la URL de PostgreSQL tal como la entrega Neon (`postgresql://...`).
 
 ### Cambiado
+- **PostgreSQL 18** en Docker Compose y en el CI, la misma versión que Neon. La base local de
+  Docker se recrea una vez: `docker compose down -v` y los datos ficticios se regeneran solos.
 - `tempo-ledger openapi` escribe el contrato con saltos de línea LF también en Windows.
 - Licencia: de MIT a **todos los derechos reservados**. El código se puede leer y ejecutar
   para evaluarlo, pero no copiar ni reutilizar sin permiso.

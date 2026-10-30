@@ -41,5 +41,7 @@ Decisiones para la demo (`render.yaml`):
   de prueba; en local todo sigue disponible.
 - **Despliegue solo con el CI en verde** (`autoDeployTrigger: checksPass`).
 - **Región:** Virginia en Render y AWS US East 1 en Neon, cerca una de otra.
+- **PostgreSQL 18:** es la versión del proyecto en Neon; Docker Compose y el CI usan la misma
+  para que las pruebas corran contra lo que usa la demo.
 - La URL de Neon se guarda como secreto en Render; la API acepta el formato con que Neon la
   entrega (`postgresql://...`).

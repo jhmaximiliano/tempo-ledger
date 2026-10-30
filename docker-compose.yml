@@ -4,13 +4,13 @@
 # Los puertos se cambian con TEMPO_WEB_PORT y TEMPO_API_PORT si ya están ocupados.
 services:
   db:
-    image: postgres:17-alpine
+    image: postgres:18-alpine  # la misma versión que Neon, la base de la demo
     environment:
       POSTGRES_USER: tempo
       POSTGRES_PASSWORD: tempo
       POSTGRES_DB: tempo
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql  # desde la versión 18 los datos van aquí
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U tempo -d tempo"]
       interval: 3s
