@@ -10,8 +10,9 @@ asientos, y cada número viene con las líneas que lo explican.
 > monthly balance is rebuilt from entries and comes with the lines that explain it.*
 
 Proyecto personal de práctica. **Todos los datos son ficticios**: los genera un generador
-reproducible y no corresponden a ninguna persona real. El producto **no usa modelos de IA**
-([ADR-0009](docs/adr/0009-sin-ia-generativa.md)).
+reproducible y no corresponden a ninguna persona real. Las reglas son un ejemplo inventado:
+no describen la política de ninguna empresa ni son una guía legal o laboral. El producto
+**no usa modelos de IA** ([ADR-0009](docs/adr/0009-sin-ia-generativa.md)).
 
 **Estado:** F5 terminada (`v0.5.0`): todo se levanta con un comando (Docker Compose) y cada PR
 pasa estilo, tipos, pruebas con cobertura, pruebas en PostgreSQL y la prueba de Docker.
