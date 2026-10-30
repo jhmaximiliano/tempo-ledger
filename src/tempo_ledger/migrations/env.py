@@ -25,6 +25,7 @@ def run_migrations_online() -> None:
                           render_as_batch=True)
         with context.begin_transaction():
             context.run_migrations()
+    engine.dispose()
 
 
 run_migrations_online()

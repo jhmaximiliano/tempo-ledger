@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "types": "npx --yes openapi-typescript@7.13.0 openapi.json -o src/api/schema.d.ts"
+    "types": "npx --yes openapi-typescript@7.13.0 openapi.json -o src/api/schema.d.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.105.0",
@@ -26,6 +27,7 @@
     "oxlint": "^1.89.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~7.0.2",
-    "vite": "^8.3.5"
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
   }
 }

@@ -39,8 +39,8 @@ def main(argv: list[str] | None = None) -> None:
     if args.command == "openapi":
         from tempo_ledger.api.app import create_app  # solo este comando necesita la API
 
-        args.out.write_text(json.dumps(create_app().openapi(), ensure_ascii=False, indent=2),
-                            encoding="utf-8")
+        contract = json.dumps(create_app().openapi(), ensure_ascii=False, indent=2)
+        args.out.write_text(contract + "\n", encoding="utf-8")
         print(f"contrato escrito: {args.out}")
         return
 
@@ -48,7 +48,11 @@ def main(argv: list[str] | None = None) -> None:
     if args.command == "seed":
         url = args.url or db.database_url()
         db.upgrade(url)
-        load.save(db.make_engine(url), ds)
+        engine = db.make_engine(url)
+        try:
+            load.save(engine, ds)
+        finally:
+            engine.dispose()
         print(f"base cargada: {len(ds.employees)} empleados, {len(ds.requests)} solicitudes, "
               f"{len(ds.attendance)} días de asistencia (semilla {ds.seed})")
     else:

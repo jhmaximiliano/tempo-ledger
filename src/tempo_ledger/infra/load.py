@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import Engine, delete, select
+from sqlalchemy import Engine, delete, select, text
 from sqlalchemy.orm import Session
 
 from tempo_ledger.data.generator import (
@@ -36,6 +36,14 @@ def save(engine: Engine, ds: Dataset) -> None:
         s.add_all(RequestRow(**_fields(r)) for r in ds.requests)
         s.add_all(AttendanceRow(**_fields(a)) for a in ds.attendance)
         s.add_all(ExceptionRow(**_fields(x)) for x in ds.exceptions)
+        s.flush()
+        if engine.dialect.name == "postgresql":
+            # Los ids vienen del generador: el contador de cada tabla debe seguir desde el
+            # mayor, o el próximo alta (por la API) chocaría con un id existente.
+            for name in ("employees", "requests", "attendance", "exceptions"):
+                s.execute(text(
+                    f"SELECT setval(pg_get_serial_sequence('{name}', 'id'), "
+                    f"COALESCE((SELECT MAX(id) FROM {name}), 0) + 1, false)"))
 
 
 def read(engine: Engine, seed: int = 0) -> Dataset:

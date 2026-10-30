@@ -6,6 +6,7 @@ from dataclasses import replace
 from pathlib import Path
 
 import pytest
+from dbutil import database_url
 
 from tempo_ledger.data.generator import Dataset, ExceptionRec, generate
 from tempo_ledger.domain import Calendar, Period, ledger_until, to_postings
@@ -129,7 +130,7 @@ def test_la_cadena_da_lo_mismo_que_los_pasos_por_separado(ds):
 
 
 def test_la_cadena_lee_igual_desde_la_base(ds, tmp_path: Path):
-    url = f"sqlite:///{(tmp_path / 'tempo.db').as_posix()}"
+    url = database_url(tmp_path)
     db.upgrade(url)
     engine = db.make_engine(url)
     try:

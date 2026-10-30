@@ -10,7 +10,7 @@ ficticios (`TEMPO_SEED`, `TEMPO_EMPLOYEES`; se desactiva con `TEMPO_AUTO_SEED=fa
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from typing import Annotated
 
@@ -43,7 +43,8 @@ from tempo_ledger.settings import Settings
 
 
 def _service(request: Request) -> LedgerService:
-    return request.app.state.service
+    service: LedgerService = request.app.state.service
+    return service
 
 
 Service = Annotated[LedgerService, Depends(_service)]
@@ -77,7 +78,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         except ValueError as exc:
             raise HTTPException(422, "periodo inválido: se espera AAAA-MM") from exc
 
-    def _call(fn, *args, **kwargs):
+    def _call[**P, T](fn: Callable[P, T], *args: P.args, **kwargs: P.kwargs) -> T:
         """Traduce los errores del dominio a códigos HTTP."""
         try:
             return fn(*args, **kwargs)

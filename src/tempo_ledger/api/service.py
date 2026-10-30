@@ -6,7 +6,7 @@ descarta para que la próxima consulta vea los datos nuevos.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from threading import Lock
 
 from tempo_ledger.data.generator import ClosingRec, Dataset, EmployeeRec, RequestRec
@@ -92,7 +92,7 @@ class LedgerService:
 
     # --- Escritura -----------------------------------------------------------------------
 
-    def add_request(self, employee_id: int, kind: RequestKind, start_date, end_date,
+    def add_request(self, employee_id: int, kind: RequestKind, start_date: date, end_date: date,
                     minutes: int | None, reason: str,
                     registered_at: datetime | None = None) -> RequestRec:
         emp = self.employee(employee_id)

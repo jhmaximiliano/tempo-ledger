@@ -1,7 +1,7 @@
 """esquema inicial
 
 Revision ID: 0001
-Revises: 
+Revises:
 Create Date: 2026-10-26 19:50:51.142321
 """
 

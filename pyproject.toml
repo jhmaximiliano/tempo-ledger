@@ -27,6 +27,10 @@ dev = [
     "pytest>=8.0",
     "httpx>=0.27",   # lo usa el TestClient de FastAPI
     "ruff>=0.6",
+    "mypy>=1.13",
+    "pytest-cov>=6.0",
+    "pre-commit>=4.0",
+    "types-openpyxl>=3.1.5.20261017",
 ]
 
 [build-system]
@@ -40,6 +44,14 @@ packages = ["src/tempo_ledger"]
 testpaths = ["tests"]
 pythonpath = ["src", "tests"]
 
+[tool.coverage.run]
+source = ["tempo_ledger"]
+
+[tool.coverage.report]
+fail_under = 95
+skip_covered = true
+show_missing = true
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"
@@ -50,3 +62,16 @@ select = ["E", "F", "I", "UP", "B"]
 [tool.ruff.lint.per-file-ignores]
 # Migraciones autogeneradas por Alembic: se revisan, pero no se reformatean a mano.
 "src/tempo_ledger/migrations/versions/*" = ["E501"]
+
+[tool.mypy]
+python_version = "3.13"
+packages = ["tempo_ledger"]
+mypy_path = "src"
+strict = true
+# Los Protocol con @property y las dataclasses congeladas ya dan la mayor parte del valor;
+# no se exige anotar los cuerpos de las pruebas.
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["alembic.*"]
+ignore_missing_imports = true
