@@ -3,6 +3,21 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con
 [SemVer](https://semver.org/lang/es/). Cada fase del plan (`docs/PLAN.md`) cierra con una versión.
 
+## [Sin publicar]
+
+### Añadido
+- Web (`frontend/`, React + Vite + TypeScript + Tailwind + TanStack Query) con dos vistas:
+  saldos del cierre (filtros por estado, equipo y nombre; orden por columna; descarga a
+  Excel) y la cuenta del cierre de cada empleado (asientos, asistencia, finiquito).
+- Tipos de TypeScript generados del contrato de la API (`tempo-ledger openapi` y
+  `npm run types`).
+- CI: compilación y estilo de la web, y control de que el contrato de la web esté al día.
+- Pruebas de los comandos del CLI.
+
+### Cambiado
+- `POST /simulations` devuelve primero `changes`; el cierre simulado de cada empleado solo
+  viene con `include_rows: true`.
+
 ## [0.3.0] — 2026-10-28 · F3: API, herramientas, Excel y simulación
 
 ### Añadido
