@@ -3,19 +3,24 @@
 from __future__ import annotations
 
 import json
-import sqlite3
 from pathlib import Path
 
+from dbutil import database_url
 from openpyxl import load_workbook
+from sqlalchemy import create_engine, text
 
 from tempo_ledger.cli import main
 
 
 def test_seed_llena_la_base(tmp_path: Path, capsys) -> None:
-    db = tmp_path / "cli.db"
-    main(["seed", "--seed", "7", "--employees", "15", "--url", f"sqlite:///{db.as_posix()}"])
-    with sqlite3.connect(db) as c:
-        assert c.execute("select count(*) from employees").fetchone()[0] == 15
+    url = database_url(tmp_path)
+    main(["seed", "--seed", "7", "--employees", "15", "--url", url])
+    engine = create_engine(url)
+    try:
+        with engine.connect() as c:
+            assert c.execute(text("select count(*) from employees")).scalar() == 15
+    finally:
+        engine.dispose()
     assert "base cargada: 15 empleados" in capsys.readouterr().out
 
 

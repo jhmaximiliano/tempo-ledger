@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
+from dbutil import database_url
 from sqlalchemy import inspect
 
 from tempo_ledger.data.export import export_xlsx
@@ -37,25 +38,30 @@ def test_periodo_de_cierre_sigue_la_ventana() -> None:
     assert closing_period(date(2026, 12, 28)) == Period(2027, 1)
 
 
-def _sqlite(tmp_path: Path) -> str:
-    return f"sqlite:///{(tmp_path / 'tempo.db').as_posix()}"
 
 
 def test_migracion_crea_las_tablas(tmp_path: Path) -> None:
-    url = _sqlite(tmp_path)
+    url = database_url(tmp_path)
     db.upgrade(url)
-    tablas = set(inspect(db.make_engine(url)).get_table_names())
+    engine = db.make_engine(url)
+    try:
+        tablas = set(inspect(engine).get_table_names())
+    finally:
+        engine.dispose()
     assert {"employees", "requests", "attendance", "closings", "exceptions"} <= tablas
 
 
 def test_ida_y_vuelta_por_la_base(tmp_path: Path) -> None:
-    url = _sqlite(tmp_path)
+    url = database_url(tmp_path)
     db.upgrade(url)
     engine = db.make_engine(url)
     ds = generate(seed=3, employees=15)
-    load.save(engine, ds)
-    load.save(engine, ds)  # recargar reemplaza, no duplica
-    back = load.read(engine)
+    try:
+        load.save(engine, ds)
+        load.save(engine, ds)  # recargar reemplaza, no duplica
+        back = load.read(engine)
+    finally:
+        engine.dispose()
     assert back.employees == ds.employees
     assert back.closings == ds.closings
     assert back.exceptions == ds.exceptions

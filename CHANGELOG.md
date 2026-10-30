@@ -3,6 +3,26 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con
 [SemVer](https://semver.org/lang/es/). Cada fase del plan (`docs/PLAN.md`) cierra con una versión.
 
+## [Sin publicar]
+
+### Añadido
+- **mypy** en modo estricto sobre todo el paquete, en el CI y en pre-commit.
+- **Cobertura** con `pytest-cov` y un mínimo de 95 % que el CI exige (hoy: 99 %).
+- **pre-commit**: formato de archivos, YAML/TOML, ruff, mypy y oxlint antes de cada commit.
+- **Vitest** en la web, con pruebas de formatos, etiquetas y eje del gráfico.
+- **Dependabot** semanal para Python (uv), npm y GitHub Actions.
+- CI: las pruebas de base de datos y API corren también contra **PostgreSQL**; cada prueba
+  usa su propio esquema.
+
+### Corregido
+- En PostgreSQL, después de cargar los datos con `seed` el contador de ids no avanzaba y la
+  primera solicitud registrada por la API chocaba con un id existente.
+- Alembic fallaba con direcciones de base que tienen `%` (contraseñas, opciones).
+- Las conexiones a SQLite se cierran al terminar la migración y el `seed`.
+
+### Cambiado
+- ADR-0006: la web usa oxlint en lugar de ESLint.
+
 ## [0.4.0] — 2026-10-29 · F4: web
 
 ### Añadido

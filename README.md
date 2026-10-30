@@ -74,6 +74,9 @@ uv run tempo-ledger seed         # migra la base (SQLite por defecto) y la llena
 uv run tempo-ledger export       # muestra del conjunto en exports/muestra.xlsx
 uv run pytest                    # pruebas
 uv run ruff check .              # estilo
+uv run mypy                      # tipos
+uv run pytest --cov              # pruebas con cobertura (mínimo 95 %)
+uv run pre-commit install        # una vez: revisa estilo y tipos antes de cada commit
 ```
 
 Opciones: `--seed` y `--employees` en ambos comandos, `--url` en `seed` y `--out` en
@@ -204,6 +207,10 @@ cierre es el anterior del siguiente, cada asiento se cuenta **exactamente una ve
 descuento nunca es negativo. Del generador se verifica, entre otras cosas, que sea
 reproducible, que la asistencia caiga solo en días hábiles y que el flujo de aprobación sea
 coherente.
+
+**Cobertura: 99 %** del código del backend (el CI exige al menos 95 %). Las pruebas de base de
+datos y de la API corren en SQLite y, en el CI, también en **PostgreSQL**. La web tiene sus
+propias pruebas con Vitest (`npm test` en `frontend/`).
 
 ## Hoja de ruta
 

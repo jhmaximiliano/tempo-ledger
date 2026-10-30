@@ -62,4 +62,3 @@ def validated_minutes(kind: RequestKind, start: date, end: date, minutes: int | 
     if minutes is None or not 0 < minutes <= limit:
         raise RequestError(f"los minutos deben estar entre 1 y {limit}")
     return minutes
-

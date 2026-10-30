@@ -141,9 +141,9 @@ def write_table(ws: Worksheet, header: list[str], rows: object) -> None:
 
 def autowidth(ws: Worksheet, sample: int = 400) -> None:
     # iter_cols crea las celdas que recorre: no pasar de la última fila con datos.
-    for column in ws.iter_cols(max_row=min(sample, ws.max_row)):
+    for index, column in enumerate(ws.iter_cols(max_row=min(sample, ws.max_row)), start=1):
         width = max((_width(c.value) for c in column), default=8)
-        ws.column_dimensions[get_column_letter(column[0].column)].width = min(width + 3, 60)
+        ws.column_dimensions[get_column_letter(index)].width = min(width + 3, 60)
 
 
 def _width(value: object) -> int:

@@ -24,7 +24,8 @@ def make_engine(url: str | None = None) -> Engine:
 def alembic_config(url: str) -> Config:
     cfg = Config()
     cfg.set_main_option("script_location", str(_MIGRATIONS))
-    cfg.set_main_option("sqlalchemy.url", url)
+    # configparser interpreta "%": una URL con "%" (contraseñas, opciones) debe escaparlo.
+    cfg.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
     return cfg
 
 

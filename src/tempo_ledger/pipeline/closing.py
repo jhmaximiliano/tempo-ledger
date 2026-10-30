@@ -19,12 +19,12 @@ from typing import Any
 from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
 from sqlalchemy import Engine
 
-from tempo_ledger.data.generator import Dataset, generate
+from tempo_ledger.data.generator import AttendanceRec, Dataset, ExceptionRec, generate
 from tempo_ledger.domain.calendar import DEFAULT_CALENDAR, Calendar
 from tempo_ledger.domain.catalog import ExceptionKind, RequestStatus
 from tempo_ledger.domain.ledger import Closing, ledger_until
 from tempo_ledger.domain.models import Period, Policy
-from tempo_ledger.domain.postings import to_postings
+from tempo_ledger.domain.postings import Posting, to_postings
 
 Loader = Callable[[], Dataset]
 State = dict[str, Any]
@@ -110,23 +110,23 @@ def validate(state: State) -> State:
     return state
 
 
-def postings_by_employee(state: State) -> dict[int, list]:
+def postings_by_employee(state: State) -> dict[int, list[Posting]]:
     request: ClosingRequest = state["request"]
-    grouped: dict[int, list] = defaultdict(list)
+    grouped: dict[int, list[Posting]] = defaultdict(list)
     for p in to_postings(state["dataset"].requests, request.policy, request.calendar):
         grouped[p.employee_id].append(p)
     return grouped
 
 
-def attendance_by_employee(state: State) -> dict[int, list]:
-    grouped: dict[int, list] = defaultdict(list)
+def attendance_by_employee(state: State) -> dict[int, list[AttendanceRec]]:
+    grouped: dict[int, list[AttendanceRec]] = defaultdict(list)
     for a in state["dataset"].attendance:
         grouped[a.employee_id].append(a)
     return grouped
 
 
-def exceptions_by_employee(state: State) -> dict[int, list]:
-    grouped: dict[int, list] = defaultdict(list)
+def exceptions_by_employee(state: State) -> dict[int, list[ExceptionRec]]:
+    grouped: dict[int, list[ExceptionRec]] = defaultdict(list)
     for x in state["dataset"].exceptions:
         grouped[x.employee_id].append(x)
     return grouped
@@ -168,15 +168,16 @@ def report(state: State) -> ClosingReport:
 
 def build_closing_chain(loader: Loader) -> Runnable[ClosingRequest, ClosingReport]:
     """La cadena completa. Las tres preparaciones de `reglas` corren en paralelo."""
-    load = RunnableLambda(lambda request: {"request": request, "dataset": loader()},
-                          name="cargar")
+    def load(request: ClosingRequest) -> State:
+        return {"request": request, "dataset": loader()}
+
     rules = RunnablePassthrough.assign(
         postings=RunnableLambda(postings_by_employee),
         attendance=RunnableLambda(attendance_by_employee),
         exceptions=RunnableLambda(exceptions_by_employee),
     ).with_config(run_name="reglas")
     return (
-        load
+        RunnableLambda(load, name="cargar")
         | RunnableLambda(validate, name="validar")
         | rules
         | RunnableLambda(close, name="cerrar")

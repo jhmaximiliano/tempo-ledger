@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
+from dbutil import database_url
 from fastapi.testclient import TestClient
 
 from tempo_ledger.api.app import create_app
@@ -22,7 +23,7 @@ EMP = next(e.id for e in DS.employees
 
 
 def make_client(tmp_path: Path, **kwargs) -> TestClient:
-    url = f"sqlite:///{(tmp_path / 'api.db').as_posix()}"
+    url = database_url(tmp_path)
     settings = Settings(policy=Policy(), database_url=url, seed=SEED, employees=EMPLOYEES,
                         **kwargs)
     return TestClient(create_app(settings))

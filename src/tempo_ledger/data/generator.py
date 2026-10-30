@@ -253,7 +253,9 @@ def _status_and_dates(
     rnd: random.Random, kind: RequestKind, start: date, edge: str | None,
     effective_of: dict[str, date],
 ) -> tuple[RequestStatus, datetime, datetime | None]:
-    hora = lambda: time(rnd.randint(8, 18), rnd.randint(0, 59))  # noqa: E731
+    def hora() -> time:
+        return time(rnd.randint(8, 18), rnd.randint(0, 59))
+
     # Registro: las horas a favor y las licencias se registran después; los permisos y
     # las vacaciones, casi siempre antes (planificados).
     if kind.is_credit or kind is RequestKind.MEDICAL_LEAVE:

@@ -12,6 +12,7 @@ import {
 } from 'recharts'
 
 import type { SeriesPoint } from '../api/client'
+import { hourTicks } from '../lib/chart'
 import { hours, periodName, STATUS } from '../lib/format'
 import { Hours, StatusBadge } from './ui'
 
@@ -25,19 +26,6 @@ const SHORT = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'set', 'o
 const short = (period: string) => {
   const [y, m] = period.split('-')
   return `${SHORT[Number(m) - 1]} ${y.slice(2)}`
-}
-
-// Pasos de eje en minutos: siempre horas redondas (1h, 2h, 5h, 10h, …).
-const STEPS = [60, 120, 300, 600, 1200, 3000, 6000, 12000, 30000]
-
-/** Marcas del eje Y en horas redondas, con el cero incluido y no más de seis. */
-function hourTicks(values: number[]): number[] {
-  const low = Math.min(0, ...values)
-  const high = Math.max(0, ...values)
-  const step = STEPS.find((s) => (high - low) / s <= 5) ?? STEPS.at(-1)!
-  const ticks = []
-  for (let t = Math.floor(low / step) * step; t <= Math.ceil(high / step) * step; t += step) ticks.push(t)
-  return ticks
 }
 
 /** El saldo final cierre a cierre. El punto del cierre que se mira va resaltado; un clic abre otro. */

@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   backend:
-    name: Backend (ruff + pytest)
+    name: Backend (ruff + mypy + pytest)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,8 +31,12 @@ jobs:
       - name: Estilo (ruff)
         run: uv run ruff check .
 
-      - name: Pruebas (pytest)
-        run: uv run pytest
+      - name: Tipos (mypy)
+        run: uv run mypy
+
+      # El mínimo de cobertura está en pyproject.toml ([tool.coverage.report] fail_under).
+      - name: Pruebas y cobertura (pytest)
+        run: uv run pytest --cov --cov-report=term
 
       # Si cambia la API, el contrato de la web debe regenerarse en el mismo PR.
       - name: Contrato de la API al día
@@ -40,8 +44,40 @@ jobs:
           uv run tempo-ledger openapi --out /tmp/openapi.json
           diff -q /tmp/openapi.json frontend/openapi.json
 
+  postgres:
+    name: Base y API en PostgreSQL
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tempo
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s
+          --health-retries 10
+    env:
+      # Cada prueba crea su propio esquema en esta base (tests/dbutil.py).
+      TEMPO_TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/tempo
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Instalar dependencias (con el extra de PostgreSQL)
+        run: uv sync --locked --extra postgres
+
+      - name: Pruebas que usan la base
+        run: >-
+          uv run pytest tests/test_calendar_db.py tests/test_pipeline.py tests/test_cli.py
+          tests/test_api.py tests/test_api_extras.py
+
   web:
-    name: Web (lint + build)
+    name: Web (lint + pruebas + build)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -58,5 +94,7 @@ jobs:
       - run: npm ci
       - name: Estilo (oxlint)
         run: npm run lint
+      - name: Pruebas (Vitest)
+        run: npm test
       - name: Tipos y compilación (tsc + vite)
         run: npm run build
