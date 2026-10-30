@@ -13,9 +13,9 @@ Proyecto personal de práctica. **Todos los datos son ficticios**: los genera un
 reproducible y no corresponden a ninguna persona real. El producto **no usa modelos de IA**
 ([ADR-0009](docs/adr/0009-sin-ia-generativa.md)).
 
-**Estado:** F4 terminada (`v0.4.0`): la web muestra los cierres, la cuenta de cada empleado,
-los eventos con semáforo, la serie mensual y la simulación. Sigue F5: calidad y Docker.
-Ver la [hoja de ruta](#hoja-de-ruta) y el [plan](docs/PLAN.md).
+**Estado:** F5 terminada (`v0.5.0`): todo se levanta con un comando (Docker Compose) y cada PR
+pasa estilo, tipos, pruebas con cobertura, pruebas en PostgreSQL y la prueba de Docker.
+Sigue F6: la demo pública. Ver la [hoja de ruta](#hoja-de-ruta) y el [plan](docs/PLAN.md).
 
 ## Reglas del libro
 
@@ -63,6 +63,21 @@ misma semilla, siempre el mismo conjunto para enero 2025 – diciembre 2026 (24 
 - Perfiles de comportamiento (equilibrado, acumulador, deudor, impuntual) y 7 casos borde
   forzados: siempre a favor, deuda grande, aprobación tardía, cese a mitad de mes, ingreso
   reciente, sin movimientos y excepción parcial.
+
+## Con Docker (un comando)
+
+Requisito: [Docker](https://www.docker.com/) con Compose.
+
+```bash
+docker compose up --build
+```
+
+Levanta **PostgreSQL**, la **API** y la **web**, y llena la base con datos ficticios la primera
+vez. Abrir la web en <http://localhost:8080> y la documentación de la API en
+<http://localhost:8010/docs>. Si esos puertos están ocupados:
+`$env:TEMPO_WEB_PORT = "8090"; $env:TEMPO_API_PORT = "8020"; docker compose up --build`.
+
+Para bajar todo: `docker compose down` (con `-v` también se borra la base).
 
 ## Ejecutar en local
 
@@ -221,7 +236,7 @@ Cada fase cierra con pruebas en verde, PR integrado y una etiqueta de versión.
 - [x] **F2** — Motor de reglas y cadena LCEL del cierre · `v0.2.0`
 - [x] **F3** — API sobre la base, herramientas LangChain, Excel y simulación · `v0.3.0`
 - [x] **F4** — Web con las 5 vistas · `v0.4.0`
-- [ ] **F5** — Calidad, Docker Compose y CI/CD · `v0.5.0`
+- [x] **F5** — Calidad, Docker Compose y CI/CD · `v0.5.0`
 - [ ] **F6** — Demo pública en Render + Neon · `v1.0.0`
 - [ ] **F7** — *(Opcional)* Buscador del reglamento · `v1.1.0`
 

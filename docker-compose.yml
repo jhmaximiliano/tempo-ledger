@@ -1,0 +1,52 @@
+# Todo el proyecto con un comando (ADR-0007):
+#   docker compose up --build
+# Web en http://localhost:8080 · API en http://localhost:8010/docs
+# Los puertos se cambian con TEMPO_WEB_PORT y TEMPO_API_PORT si ya están ocupados.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: tempo
+      POSTGRES_PASSWORD: tempo
+      POSTGRES_DB: tempo
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tempo -d tempo"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    environment:
+      TEMPO_DATABASE_URL: postgresql+psycopg://tempo:tempo@db:5432/tempo
+      TEMPO_SEED: ${TEMPO_SEED:-42}
+      TEMPO_EMPLOYEES: ${TEMPO_EMPLOYEES:-60}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${TEMPO_API_PORT:-8010}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      start_period: 60s
+      retries: 20
+
+  web:
+    build: ./frontend
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${TEMPO_WEB_PORT:-8080}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/api/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  pgdata:

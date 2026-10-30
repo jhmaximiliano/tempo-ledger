@@ -76,6 +76,31 @@ jobs:
           uv run pytest tests/test_calendar_db.py tests/test_pipeline.py tests/test_cli.py
           tests/test_api.py tests/test_api_extras.py
 
+  docker:
+    name: Docker Compose (todo junto)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # --wait espera a que PostgreSQL, la API y la web pasen sus chequeos de salud.
+      - name: Construir y levantar
+        run: docker compose up --build -d --wait
+
+      - name: La web responde y lee de PostgreSQL a través de la API
+        run: |
+          curl -fsS http://localhost:8080/ | grep -q "tempo-ledger"
+          curl -fsS http://localhost:8080/cierres/2026-03 | grep -q "tempo-ledger"
+          curl -fsS http://localhost:8080/api/closings/2026-03 | grep -q '"period":"2026-03"'
+          curl -fsS -o /dev/null http://localhost:8080/api/closings/2026-03/export.xlsx
+
+      - name: Registros si algo falla
+        if: failure()
+        run: docker compose logs
+
+      - name: Bajar
+        if: always()
+        run: docker compose down -v
+
   web:
     name: Web (lint + pruebas + build)
     runs-on: ubuntu-latest
