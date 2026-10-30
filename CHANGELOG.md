@@ -3,6 +3,14 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con
 [SemVer](https://semver.org/lang/es/). Cada fase del plan (`docs/PLAN.md`) cierra con una versión.
 
+## [Sin publicar]
+
+### Cambiado
+- Licencia: de MIT a **todos los derechos reservados**. El código se puede leer y ejecutar
+  para evaluarlo, pero no copiar ni reutilizar sin permiso.
+- README: aviso de que las reglas son un ejemplo inventado, no la política de una empresa ni
+  una guía legal o laboral.
+
 ## [0.5.0] — 2026-10-29 · F5: calidad, Docker y CI/CD
 
 ### Añadido
