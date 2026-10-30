@@ -1,0 +1,14 @@
+# Lo que no entra a las imágenes: entornos, cachés, datos locales y la web compilada.
+.git
+.venv
+**/__pycache__
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.coverage
+htmlcov
+*.db
+exports
+.env
+frontend/node_modules
+frontend/dist

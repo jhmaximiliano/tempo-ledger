@@ -3,9 +3,14 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con
 [SemVer](https://semver.org/lang/es/). Cada fase del plan (`docs/PLAN.md`) cierra con una versión.
 
-## [Sin publicar]
+## [0.5.0] — 2026-10-29 · F5: calidad, Docker y CI/CD
 
 ### Añadido
+- **Docker Compose**: PostgreSQL, API y web con `docker compose up --build`. La imagen de la API
+  se construye con uv (versiones de `uv.lock`) y corre sin privilegios; la web se compila y se
+  sirve con nginx, que reenvía `/api` a la API. Puertos configurables (`TEMPO_WEB_PORT`,
+  `TEMPO_API_PORT`).
+- CI: un trabajo levanta todo con Docker Compose y comprueba que la web lea de PostgreSQL.
 - **mypy** en modo estricto sobre todo el paquete, en el CI y en pre-commit.
 - **Cobertura** con `pytest-cov` y un mínimo de 95 % que el CI exige (hoy: 99 %).
 - **pre-commit**: formato de archivos, YAML/TOML, ruff, mypy y oxlint antes de cada commit.
