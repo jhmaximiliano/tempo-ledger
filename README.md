@@ -14,9 +14,34 @@ reproducible y no corresponden a ninguna persona real. Las reglas son un ejemplo
 no describen la política de ninguna empresa ni son una guía legal o laboral. El producto
 **no usa modelos de IA** ([ADR-0009](docs/adr/0009-sin-ia-generativa.md)).
 
-**Estado:** F5 terminada (`v0.5.0`): todo se levanta con un comando (Docker Compose) y cada PR
-pasa estilo, tipos, pruebas con cobertura, pruebas en PostgreSQL y la prueba de Docker.
-Sigue F6: la demo pública. Ver la [hoja de ruta](#hoja-de-ruta) y el [plan](docs/PLAN.md).
+**Demo:** <https://tempo-ledger.onrender.com> · documentación de la API:
+<https://tempo-ledger-api.onrender.com/docs>
+
+> La demo usa los planes gratuitos de Render y Neon: si nadie la usó en un rato, **tarda hasta
+> un minuto en despertar** (la web avisa y reintenta sola). Es de **solo lectura**: consultar,
+> simular y descargar el Excel funcionan; registrar o decidir solicitudes, solo en local.
+
+**Estado:** F6 en curso: la demo pública funciona en Render + Neon. Cada PR pasa estilo, tipos,
+pruebas con cobertura, pruebas en PostgreSQL y la prueba de Docker. Ver la
+[hoja de ruta](#hoja-de-ruta) y el [plan](docs/PLAN.md).
+
+## Cómo se ve
+
+| Saldos del cierre | La cuenta de un empleado |
+|---|---|
+| ![Saldos del cierre de marzo de 2026: totales, filtros por estado y la tabla de empleados](docs/img/saldos.png) | ![La cuenta del cierre de un empleado: el cálculo paso a paso, el recorrido del saldo y sus asientos](docs/img/cuenta-empleado.png) |
+| **Eventos con semáforo** | **Simulación** |
+| ![Eventos del cierre: solicitudes aprobadas, fuera de plazo, sin aprobar y rechazadas](docs/img/eventos.png) | ![Simulación del cierre con corte el día 15: real contra simulado y a quién le cambia el saldo](docs/img/simulacion.png) |
+
+## Tres formas de verlo
+
+| | Demo pública | Docker (un comando) | Modo desarrollo |
+|---|---|---|---|
+| **Para qué** | Mirarla sin instalar nada | Todo junto en tu PC, igual que la demo | Programar: los cambios se ven al instante |
+| **Dónde** | <https://tempo-ledger.onrender.com> | <http://localhost:8080> | <http://localhost:5173> |
+| **Base de datos** | PostgreSQL 18 en Neon | PostgreSQL 18 en un contenedor | SQLite (un archivo) |
+| **Registrar solicitudes** | No (solo lectura) | Sí | Sí |
+| **Cómo** | Abrir el enlace | [Con Docker](#con-docker-un-comando) | [Ejecutar en local](#ejecutar-en-local) |
 
 ## Reglas del libro
 
@@ -55,7 +80,8 @@ si saldo < 0  →  se descuenta y el saldo queda en 0
 ## Datos ficticios
 
 El generador ([`data/generator.py`](src/tempo_ledger/data/generator.py)) produce, con la
-misma semilla, siempre el mismo conjunto para enero 2025 – diciembre 2026 (24 cierres):
+misma semilla, siempre el mismo conjunto para enero 2025 – diciembre 2026. Son 25 cierres:
+lo que pasa después del corte del 25 de diciembre de 2026 cae en el cierre de enero de 2027.
 
 - ~60 empleados con equipo, modalidad, sede, altas y ceses.
 - Solicitudes con su flujo de aprobación (pendiente, aprobada, rechazada, anulada).
@@ -79,6 +105,21 @@ vez. Abrir la web en <http://localhost:8080> y la documentación de la API en
 `$env:TEMPO_WEB_PORT = "8090"; $env:TEMPO_API_PORT = "8020"; docker compose up --build`.
 
 Para bajar todo: `docker compose down` (con `-v` también se borra la base).
+
+## La demo en la nube
+
+Definida en [`render.yaml`](render.yaml); el porqué, en
+[ADR-0007](docs/adr/0007-docker-compose-render-neon.md).
+
+- **Web** en Render como sitio estático: siempre encendida. Reenvía `/api` a la API, igual que
+  nginx en Docker.
+- **API** en Render con el mismo `Dockerfile` (plan gratis): se duerme a los 15 minutos sin
+  visitas y tarda hasta un minuto en despertar.
+- **Base** PostgreSQL 18 en Neon (plan gratis). La API crea las tablas y las llena con los
+  datos ficticios en su primer arranque. La dirección de la base es un secreto guardado en
+  Render, no en el repositorio.
+- **Solo lectura** (`TEMPO_READ_ONLY=true`): así nadie llena la base pública de datos de prueba.
+- Render vuelve a desplegar solo cuando el CI de `main` pasa.
 
 ## Ejecutar en local
 
@@ -208,10 +249,10 @@ docs/          plan y registro de decisiones (ADR)
 |---|---|
 | Backend | Python 3.13 · FastAPI · Pydantic · uv |
 | Orquestación | LangChain (`langchain-core`, LCEL), sin modelo |
-| Datos | SQLAlchemy · Alembic · SQLite (dev/pruebas) · PostgreSQL (Docker/demo) |
+| Datos | SQLAlchemy · Alembic · SQLite (dev/pruebas) · PostgreSQL 18 (Docker/demo) |
 | Web | React · Vite · TypeScript · Tailwind · TanStack Query · Recharts |
-| Calidad y CI | ruff · mypy · pytest + cobertura · Vitest · ESLint · pre-commit · GitHub Actions |
-| Ejecución y demo | Docker Compose · Render · Neon |
+| Calidad y CI | ruff · mypy · pytest + cobertura · Vitest · oxlint · pre-commit · GitHub Actions |
+| Ejecución y demo | Docker Compose · Render (API y web) · Neon (PostgreSQL) |
 
 Cada elección tiene su decisión registrada en [`docs/adr/`](docs/adr/).
 
