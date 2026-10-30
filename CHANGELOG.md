@@ -5,7 +5,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+### Añadido
+- **Configuración de la demo en Render** (`render.yaml`): la API con el mismo Dockerfile y la
+  web como sitio estático que reenvía `/api`. La base es PostgreSQL en Neon.
+- **Modo solo lectura** (`TEMPO_READ_ONLY=true`): la API no registra ni decide solicitudes
+  (403); consultar, simular y exportar siguen funcionando.
+- La web reintenta mientras la API de la demo despierta y avisa de la espera.
+- La API acepta la URL de PostgreSQL tal como la entrega Neon (`postgresql://...`).
+
 ### Cambiado
+- `tempo-ledger openapi` escribe el contrato con saltos de línea LF también en Windows.
 - Licencia: de MIT a **todos los derechos reservados**. El código se puede leer y ejecutar
   para evaluarlo, pero no copiar ni reutilizar sin permiso.
 - README: aviso de que las reglas son un ejemplo inventado, no la política de una empresa ni

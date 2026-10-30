@@ -6,6 +6,7 @@ Documentación interactiva: http://127.0.0.1:8000/docs
 
 Al arrancar migra la base (`TEMPO_DATABASE_URL`) y, si está vacía, la llena con datos
 ficticios (`TEMPO_SEED`, `TEMPO_EMPLOYEES`; se desactiva con `TEMPO_AUTO_SEED=false`).
+Con `TEMPO_READ_ONLY=true` (la demo pública) no se registran ni deciden solicitudes.
 """
 
 from __future__ import annotations
@@ -49,6 +50,9 @@ def _service(request: Request) -> LedgerService:
 
 Service = Annotated[LedgerService, Depends(_service)]
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+READ_ONLY = ("La demo pública es de solo lectura: no guarda cambios. Para registrar y decidir "
+             "solicitudes, levanta el proyecto en local con `docker compose up`.")
+WRITES: dict[int | str, dict[str, str]] = {403: {"description": "Demo de solo lectura"}}
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -88,6 +92,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(409, str(exc)) from exc
         except RequestError as exc:
             raise HTTPException(422, str(exc)) from exc
+
+    def _writable() -> None:
+        if settings.read_only:
+            raise HTTPException(403, READ_ONLY)
 
     @app.get("/health")
     def health() -> dict[str, str]:
@@ -150,14 +158,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def get_request(request_id: int, svc: Service) -> RequestOut:
         return RequestOut.of(_call(svc.request, request_id))
 
-    @app.post("/requests", response_model=RequestOut, status_code=201)
+    @app.post("/requests", response_model=RequestOut, status_code=201,
+              dependencies=[Depends(_writable)], responses=WRITES)
     def add_request(body: RequestIn, svc: Service) -> RequestOut:
         rec = _call(svc.add_request, body.employee_id, body.kind, body.start_date,
                     body.end_date or body.start_date, body.minutes, body.reason,
                     body.registered_at)
         return RequestOut.of(rec)
 
-    @app.post("/requests/{request_id}/decision", response_model=RequestOut)
+    @app.post("/requests/{request_id}/decision", response_model=RequestOut,
+              dependencies=[Depends(_writable)], responses=WRITES)
     def decide(request_id: int, body: DecisionIn, svc: Service) -> RequestOut:
         return RequestOut.of(_call(svc.decide, request_id, body.status, body.decided_at))
 

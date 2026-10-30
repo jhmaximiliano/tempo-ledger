@@ -40,7 +40,7 @@ def main(argv: list[str] | None = None) -> None:
         from tempo_ledger.api.app import create_app  # solo este comando necesita la API
 
         contract = json.dumps(create_app().openapi(), ensure_ascii=False, indent=2)
-        args.out.write_text(contract + "\n", encoding="utf-8")
+        args.out.write_text(contract + "\n", encoding="utf-8", newline="\n")  # igual en Windows
         print(f"contrato escrito: {args.out}")
         return
 

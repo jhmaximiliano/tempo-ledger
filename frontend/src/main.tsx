@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router'
 
 import './index.css'
+import { retry, retryDelay } from './api/retry'
 import { Layout } from './components/Layout'
 import { ClosingsPage, DefaultClosing } from './pages/ClosingsPage'
 import { EmployeeClosingPage } from './pages/EmployeeClosingPage'
@@ -11,7 +12,7 @@ import { EventsPage } from './pages/EventsPage'
 import { SimulationPage } from './pages/SimulationPage'
 
 // Los datos cambian solo al registrar solicitudes: un minuto en caché es suficiente.
-const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000 } } })
+const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000, retry, retryDelay } } })
 
 const router = createBrowserRouter([
   {
