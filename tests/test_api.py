@@ -184,3 +184,15 @@ def test_solo_se_decide_una_pendiente(writer):
     assert writer.post(ruta, json={"status": "rechazada"}).status_code == 200
     assert writer.post(ruta, json={"status": "aprobada"}).status_code == 409
     assert writer.get("/requests/999999").status_code == 404
+
+
+# --- Demo de solo lectura ----------------------------------------------------------------
+
+def test_la_demo_de_solo_lectura_no_guarda_cambios(tmp_path):
+    with make_client(tmp_path, read_only=True) as demo:
+        r = _alta(demo)
+        assert r.status_code == 403 and "solo lectura" in r.json()["detail"]
+        assert demo.post("/requests/1/decision", json={"status": "aprobada"}).status_code == 403
+        # Consultar y simular no escriben: siguen funcionando.
+        assert demo.get(f"/closings/{MARZO}").status_code == 200
+        assert demo.post("/simulations", json={"period": MARZO}).status_code == 200

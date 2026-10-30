@@ -1,0 +1,48 @@
+# Demo pública en Render (ADR-0007). La base es PostgreSQL en Neon: su URL se pega como
+# secreto al crear el Blueprint y nunca se guarda en el repositorio.
+# Render despliega solo cuando el CI de main pasa (autoDeployTrigger: checksPass).
+services:
+  # API: el mismo Dockerfile que usa Docker Compose. En el plan gratis se duerme a los 15 min
+  # sin visitas y tarda hasta un minuto en despertar.
+  - type: web
+    name: tempo-ledger-api
+    runtime: docker
+    plan: free
+    region: virginia
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    buildFilter:
+      ignoredPaths:
+        - frontend/**
+        - docs/**
+        - "**/*.md"
+    envVars:
+      - key: TEMPO_DATABASE_URL
+        sync: false
+      - key: TEMPO_READ_ONLY
+        value: "true"
+      - key: PORT  # la imagen escucha en el 8000
+        value: "8000"
+
+  # Web: archivos compilados servidos por Render, siempre encendidos. /api se reenvía a la
+  # API, igual que hace nginx en Docker Compose.
+  - type: web
+    name: tempo-ledger
+    runtime: static
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: frontend/dist
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths:
+        - frontend/**
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://tempo-ledger-api.onrender.com/*
+      - type: rewrite
+        source: /*
+        destination: /index.html

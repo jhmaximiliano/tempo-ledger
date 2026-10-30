@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
+import pytest
 from dbutil import database_url
 from sqlalchemy import inspect
 
@@ -18,6 +19,7 @@ from tempo_ledger.domain.calendar import (
 )
 from tempo_ledger.domain.models import Period
 from tempo_ledger.infra import db, load
+from tempo_ledger.settings import Settings
 
 
 def test_corte_retrocede_al_dia_habil_anterior() -> None:
@@ -76,3 +78,22 @@ def test_exporta_la_muestra(tmp_path: Path) -> None:
     wb = load_workbook(path, read_only=True)
     assert wb.sheetnames == ["Resumen", "Empleados", "Cierres", "Solicitudes", "Asistencia",
                              "Excepciones"]
+
+
+@pytest.mark.parametrize("url, esperada", [
+    ("postgres://u:c@host/db", "postgresql+psycopg://u:c@host/db"),
+    ("postgresql://u:c@host/neondb?sslmode=require",
+     "postgresql+psycopg://u:c@host/neondb?sslmode=require"),
+    ("postgresql+psycopg://u:c@host/db", "postgresql+psycopg://u:c@host/db"),
+    ("sqlite:///tempo.db", "sqlite:///tempo.db"),
+])
+def test_acepta_la_url_como_la_entrega_el_proveedor(url: str, esperada: str) -> None:
+    assert db.normalize(url) == esperada
+
+
+def test_configuracion_desde_el_entorno(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert Settings.from_env().read_only is False
+    monkeypatch.setenv("TEMPO_READ_ONLY", "true")
+    monkeypatch.setenv("TEMPO_AUTO_SEED", "no")
+    s = Settings.from_env()
+    assert s.read_only is True and s.auto_seed is False

@@ -18,6 +18,7 @@ class Settings:
     seed: int = 42
     employees: int = 60
     auto_seed: bool = True  # llenar la base con datos ficticios si está vacía
+    read_only: bool = False  # demo pública: no registrar ni decidir solicitudes
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -29,4 +30,5 @@ class Settings:
             seed=int(os.environ.get("TEMPO_SEED", "42")),
             employees=int(os.environ.get("TEMPO_EMPLOYEES", "60")),
             auto_seed=os.environ.get("TEMPO_AUTO_SEED", "true").lower() in _TRUE,
+            read_only=os.environ.get("TEMPO_READ_ONLY", "false").lower() in _TRUE,
         )

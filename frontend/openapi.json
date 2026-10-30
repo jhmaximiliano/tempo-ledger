@@ -436,6 +436,9 @@
               }
             }
           },
+          "403": {
+            "description": "Demo de solo lectura"
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -484,6 +487,9 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Demo de solo lectura"
           },
           "422": {
             "description": "Validation Error",

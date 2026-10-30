@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 
 import type { Status } from '../api/client'
 import { hours, STATUS } from '../lib/format'
@@ -38,11 +38,25 @@ export function Stat({ label, value, hint }: { label: string; value: ReactNode; 
   )
 }
 
+/** Si tarda más de unos segundos, avisa que la demo gratuita puede estar despertando. */
 export function Loading({ what }: { what: string }) {
+  const [slow, setSlow] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => setSlow(true), 5_000)
+    return () => clearTimeout(timer)
+  }, [])
   return (
-    <div className="flex items-center gap-3 py-16 text-slate-500">
-      <span className="size-4 animate-spin rounded-full border-2 border-slate-300 border-t-teal-600" />
-      Cargando {what}…
+    <div className="py-16 text-slate-500">
+      <div className="flex items-center gap-3">
+        <span className="size-4 animate-spin rounded-full border-2 border-slate-300 border-t-teal-600" />
+        Cargando {what}…
+      </div>
+      {slow && (
+        <p className="mt-3 max-w-xl text-sm">
+          La demo gratuita se duerme cuando nadie la usa y tarda hasta un minuto en despertar.
+          En cuanto responda, los datos aparecen solos.
+        </p>
+      )}
     </div>
   )
 }
@@ -54,7 +68,8 @@ export function ErrorBox({ error }: { error: unknown }) {
       <div className="font-semibold">No se pudo cargar</div>
       <div className="mt-1">{message}</div>
       <div className="mt-2 text-rose-700">
-        ¿Está corriendo la API? <code>uv run uvicorn tempo_ledger.api.app:app</code>
+        En la demo pública, vuelve a intentar en un minuto. En local, revisa que la API esté
+        corriendo: <code>docker compose up</code> o <code>uv run uvicorn tempo_ledger.api.app:app</code>.
       </div>
     </div>
   )

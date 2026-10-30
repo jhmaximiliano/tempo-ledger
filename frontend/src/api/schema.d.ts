@@ -978,6 +978,13 @@ export interface operations {
                     "application/json": components["schemas"]["RequestOut"];
                 };
             };
+            /** @description Demo de solo lectura */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1012,6 +1019,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RequestOut"];
                 };
+            };
+            /** @description Demo de solo lectura */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
