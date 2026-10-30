@@ -17,7 +17,7 @@ jobs:
     name: Backend (ruff + mypy + pytest)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Instalar uv
         uses: astral-sh/setup-uv@v6
@@ -61,7 +61,7 @@ jobs:
       # Cada prueba crea su propio esquema en esta base (tests/dbutil.py).
       TEMPO_TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/tempo
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Instalar uv
         uses: astral-sh/setup-uv@v6
@@ -80,7 +80,7 @@ jobs:
     name: Docker Compose (todo junto)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # --wait espera a que PostgreSQL, la API y la web pasen sus chequeos de salud.
       - name: Construir y levantar
@@ -108,7 +108,7 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
