@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 
 import { ApiError, type Closing } from '../api/client'
 import { useEmployee, useEmployeeClosing, useSeries } from '../api/queries'
+import { SeriesChart } from '../components/SeriesChart'
 import { Card, ErrorBox, Hours, Loading, StatusBadge } from '../components/ui'
 import { day, EFFECT, hours, INCIDENT, KIND, MODALITY, periodName } from '../lib/format'
 
@@ -54,12 +56,21 @@ export function EmployeeClosingPage() {
       {closing.isError && (closing.error instanceof ApiError && closing.error.status === 404
         ? <Card><p className="text-slate-600">No tiene cierre en {periodName(period)}: todavía no ingresaba o ya había cesado.</p></Card>
         : <ErrorBox error={closing.error} />)}
-      {closing.data && <ClosingDetail closing={closing.data} />}
+      {closing.data && (
+        <ClosingDetail closing={closing.data}
+          chart={series.data && series.data.length > 0 && (
+            <Card title="Recorrido del saldo final">
+              <SeriesChart series={series.data} current={period}
+                onSelect={(p) => navigate(`/empleados/${id}/${p}`)} />
+            </Card>
+          )} />
+      )}
+
     </div>
   )
 }
 
-function ClosingDetail({ closing: c }: { closing: Closing }) {
+function ClosingDetail({ closing: c, chart }: { closing: Closing; chart: ReactNode }) {
   const debt = Math.max(0, -c.balance)
   return (
     <>
@@ -106,6 +117,8 @@ function ClosingDetail({ closing: c }: { closing: Closing }) {
           )}
         </Card>
       </div>
+
+      {chart}
 
       <Card title={`Asientos del cierre · ${c.lines.length}`}>
         {c.lines.length === 0 ? (

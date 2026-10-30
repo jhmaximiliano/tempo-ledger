@@ -32,6 +32,34 @@ export const STATUS: Record<Status, { label: string; badge: string }> = {
 
 export const STATUS_ORDER: Status[] = ['a_favor', 'saldado', 'sin_movimiento', 'excepcion', 'en_contra']
 
+export const LIGHT: Record<string, { label: string; dot: string; badge: string; hint: string }> = {
+  aprobado: {
+    label: 'Aprobado', dot: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-800 ring-emerald-200',
+    hint: 'Aprobada a tiempo: cuenta en este cierre',
+  },
+  fuera_de_plazo: {
+    label: 'Fuera de plazo', dot: 'bg-orange-500', badge: 'bg-orange-50 text-orange-800 ring-orange-200',
+    hint: 'Aprobada después de la fecha efectiva: cuenta en un cierre posterior',
+  },
+  sin_aprobar: {
+    label: 'Sin aprobar', dot: 'bg-amber-400', badge: 'bg-amber-50 text-amber-800 ring-amber-200',
+    hint: 'Sigue pendiente: todavía no cuenta',
+  },
+  rechazado: {
+    label: 'Rechazado', dot: 'bg-rose-500', badge: 'bg-rose-50 text-rose-800 ring-rose-200',
+    hint: 'Rechazada o anulada: no cuenta nunca',
+  },
+}
+
+export const LIGHT_ORDER = ['aprobado', 'fuera_de_plazo', 'sin_aprobar', 'rechazado'] as const
+
+export const REQUEST_STATUS: Record<string, string> = {
+  pendiente: 'Pendiente',
+  aprobada: 'Aprobada',
+  rechazada: 'Rechazada',
+  anulada: 'Anulada',
+}
+
 export const KIND: Record<string, string> = {
   horas_extra: 'Horas extra',
   compensacion: 'Compensación',
