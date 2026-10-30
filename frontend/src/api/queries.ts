@@ -1,6 +1,17 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 
-import { type Closing, type Employee, get, type Period, type Report, type SeriesPoint } from './client'
+import {
+  type Closing,
+  type Employee,
+  type Events,
+  get,
+  type Period,
+  post,
+  type Report,
+  type SeriesPoint,
+  type Simulation,
+  type SimulationIn,
+} from './client'
 
 export const usePeriods = () =>
   useQuery({ queryKey: ['periods'], queryFn: () => get<Period[]>('/periods'), staleTime: Infinity })
@@ -20,3 +31,10 @@ export const useEmployeeClosing = (id: number, period: string) =>
 
 export const useSeries = (id: number) =>
   useQuery({ queryKey: ['series', id], queryFn: () => get<SeriesPoint[]>(`/employees/${id}/series`) })
+
+export const useEvents = (period: string) =>
+  useQuery({ queryKey: ['events', period], queryFn: () => get<Events>(`/closings/${period}/events`) })
+
+/** La simulación no guarda nada; es un POST porque lleva parámetros. */
+export const useSimulation = () =>
+  useMutation({ mutationFn: (body: SimulationIn) => post<Simulation>('/simulations', body) })

@@ -3,8 +3,9 @@ import { Navigate, useNavigate, useParams } from 'react-router'
 
 import { API, type ReportRow, type Status } from '../api/client'
 import { usePeriods, useReport } from '../api/queries'
+import { PeriodNav } from '../components/PeriodNav'
 import { ErrorBox, Hours, Loading, Stat, StatusBadge } from '../components/ui'
-import { day, hours, periodName, STATUS, STATUS_ORDER } from '../lib/format'
+import { day, hours, STATUS, STATUS_ORDER } from '../lib/format'
 
 type SortKey = 'name' | 'opening' | 'credits' | 'due' | 'balance' | 'deduction' | 'closing' | 'pending'
 
@@ -21,22 +22,19 @@ const COLUMNS: { key: Exclude<SortKey, 'name'>; label: string; hint: string }[] 
 // Fecha local (no UTC) del momento en que se abrió la página.
 const TODAY = new Date().toLocaleDateString('sv-SE')
 
-const BUTTON = 'rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-40'
-
 /** El último cierre ya ejecutado (fecha efectiva hasta hoy), o el último del calendario. */
-export function DefaultClosing() {
+export function DefaultClosing({ base = '/cierres' }: { base?: string }) {
   const periods = usePeriods()
   if (periods.isPending) return <Loading what="el calendario" />
   if (periods.isError) return <ErrorBox error={periods.error} />
   const done = periods.data.filter((p) => p.effective <= TODAY)
   const target = (done.at(-1) ?? periods.data.at(-1))?.period
-  return target ? <Navigate to={`/cierres/${target}`} replace /> : <ErrorBox error="El calendario está vacío" />
+  return target ? <Navigate to={`${base}/${target}`} replace /> : <ErrorBox error="El calendario está vacío" />
 }
 
 export function ClosingsPage() {
   const { period = '' } = useParams()
   const navigate = useNavigate()
-  const periods = usePeriods()
   const report = useReport(period)
   const [search, setSearch] = useState('')
   const [team, setTeam] = useState('')
@@ -57,11 +55,6 @@ export function ClosingsPage() {
   }, [report.data, search, team, statuses, sort])
 
   const teams = useMemo(() => [...new Set(report.data?.rows.map((r) => r.team))].sort(), [report.data])
-  const index = periods.data?.findIndex((p) => p.period === period) ?? -1
-  const go = (offset: number) => {
-    const next = periods.data?.[index + offset]
-    if (next) navigate(`/cierres/${next.period}`)
-  }
   const toggle = (s: Status) =>
     setStatuses((prev) => {
       const next = new Set(prev)
@@ -85,17 +78,7 @@ export function ClosingsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => go(-1)} disabled={index <= 0} className={BUTTON} aria-label="Cierre anterior">
-            ←
-          </button>
-          <select value={period} onChange={(e) => navigate(`/cierres/${e.target.value}`)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium capitalize">
-            {periods.data?.map((p) => <option key={p.period} value={p.period}>{periodName(p.period)}</option>)}
-          </select>
-          <button onClick={() => go(1)} disabled={!periods.data || index >= periods.data.length - 1}
-            className={BUTTON} aria-label="Cierre siguiente">
-            →
-          </button>
+          <PeriodNav base="/cierres" period={period} />
           <a href={`${API}/closings/${period}/export.xlsx`}
             className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white hover:bg-teal-800">
             Descargar Excel

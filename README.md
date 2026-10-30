@@ -13,9 +13,9 @@ Proyecto personal de práctica. **Todos los datos son ficticios**: los genera un
 reproducible y no corresponden a ninguna persona real. El producto **no usa modelos de IA**
 ([ADR-0009](docs/adr/0009-sin-ia-generativa.md)).
 
-**Estado:** F3 terminada (`v0.3.0`): la API sobre la base calcula los cierres con el
-motor completo, exporta a Excel y simula. Sigue F4, la web. Ver la
-[hoja de ruta](#hoja-de-ruta) y el [plan](docs/PLAN.md).
+**Estado:** F4 terminada (`v0.4.0`): la web muestra los cierres, la cuenta de cada empleado,
+los eventos con semáforo, la serie mensual y la simulación. Sigue F5: calidad y Docker.
+Ver la [hoja de ruta](#hoja-de-ruta) y el [plan](docs/PLAN.md).
 
 ## Reglas del libro
 
@@ -121,17 +121,24 @@ npm run dev        # http://localhost:5173
 La web le pide los datos a la API en `http://127.0.0.1:8000`. Si la API corre en otro puerto:
 `$env:TEMPO_API_URL = "http://127.0.0.1:8001"; npm run dev` (PowerShell).
 
-Por ahora tiene dos vistas: los **saldos del cierre** (todos los empleados, con filtros por
-estado, equipo y nombre, y descarga a Excel) y **la cuenta del cierre** de cada empleado
-(asientos, asistencia y finiquito si cesó).
+Vistas:
+
+- **Saldos**: todos los empleados del cierre con su saldo y estado; filtros por estado,
+  equipo y nombre; orden por columna; descarga a Excel.
+- **La cuenta del cierre** de cada empleado (clic en una fila): el cálculo paso a paso, el
+  recorrido del saldo en un gráfico, los asientos que lo explican y la asistencia.
+- **Eventos**: las solicitudes del cierre con su semáforo (aprobado, fuera de plazo, sin
+  aprobar, rechazado).
+- **Simulación**: el cierre con otro día de corte, fecha efectiva o vencimiento, comparado
+  con el real; no guarda nada.
 
 Los tipos de TypeScript salen del contrato de la API: si cambia la API, se regeneran con
 `uv run tempo-ledger openapi` y `npm run types`. El CI avisa si quedaron desalineados.
 
 ## Funcionalidades
 
-Las seis primeras están en la API desde `v0.3.0` y la web (F4) las mostrará; la séptima
-es opcional (F7).
+Las seis primeras están en la API desde `v0.3.0` y en la web desde `v0.4.0`; la séptima es
+opcional (F7).
 
 1. **Saldos por cierre**: todos los empleados, con estado y exportación a Excel.
 2. **Detalle por empleado**: la cuenta del cierre paso a paso, con los asientos que la explican.
@@ -206,7 +213,7 @@ Cada fase cierra con pruebas en verde, PR integrado y una etiqueta de versión.
 - [x] **F1** — Modelo de datos (SQLAlchemy + Alembic) y generador ficticio · `v0.1.0`
 - [x] **F2** — Motor de reglas y cadena LCEL del cierre · `v0.2.0`
 - [x] **F3** — API sobre la base, herramientas LangChain, Excel y simulación · `v0.3.0`
-- [ ] **F4** — Web con las 5 vistas · `v0.4.0`
+- [x] **F4** — Web con las 5 vistas · `v0.4.0`
 - [ ] **F5** — Calidad, Docker Compose y CI/CD · `v0.5.0`
 - [ ] **F6** — Demo pública en Render + Neon · `v1.0.0`
 - [ ] **F7** — *(Opcional)* Buscador del reglamento · `v1.1.0`

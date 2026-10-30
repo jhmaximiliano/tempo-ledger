@@ -3,9 +3,13 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con
 [SemVer](https://semver.org/lang/es/). Cada fase del plan (`docs/PLAN.md`) cierra con una versión.
 
-## [Sin publicar]
+## [0.4.0] — 2026-10-29 · F4: web
 
 ### Añadido
+- Web: vista de **eventos** del cierre con semáforo (filtros por semáforo, tipo y nombre),
+  **serie mensual** del saldo final en un gráfico de Recharts (con vista de tabla y clic para
+  abrir otro cierre) y **simulación** de cierres comparada con el real.
+- Navegación entre Saldos, Eventos y Simulación conservando el cierre que se mira.
 - Web (`frontend/`, React + Vite + TypeScript + Tailwind + TanStack Query) con dos vistas:
   saldos del cierre (filtros por estado, equipo y nombre; orden por columna; descarga a
   Excel) y la cuenta del cierre de cada empleado (asientos, asistencia, finiquito).
