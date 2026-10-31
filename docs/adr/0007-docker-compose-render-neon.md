@@ -25,9 +25,11 @@ Planes gratuitos verificados el 2026-10-30:
 
 - **Render:** un sitio estático es gratis y no se duerme. Un servicio web gratis (0.1 CPU,
   512 MB) acepta Docker, se duerme tras 15 minutos sin tráfico y tarda alrededor de un minuto
-  en despertar; hay 750 horas gratis al mes por cuenta. Su base gratuita vence a los 30 días.
-- **Neon:** 0.5 GB por proyecto (la base de la demo ocupa unos 11 MB). Se suspende tras 5
-  minutos sin uso, despierta casi al instante y no pierde los datos.
+  en despertar; hay 750 horas gratis al mes por cuenta, compartidas entre todos sus servicios
+  web gratis. Su base gratuita vence a los 30 días.
+- **Neon:** 1 GB por proyecto y 20 GB en total por cuenta (la base de la demo ocupa unos
+  11 MB); 100 horas de cómputo al mes por proyecto. Se suspende tras 5 minutos sin uso,
+  despierta casi al instante y no pierde los datos.
 
 Decisiones para la demo (`render.yaml`):
 
